@@ -1,0 +1,22 @@
+{
+    "group_header_color": "default_title",
+    "name_color": "uitextblue",
+    "column_width": 350,
+    "columns": [
+    {
+        "groups": [
+        {
+            "header": "credits_group_header.Modding",
+            "names": [
+            {
+                "icon": "",
+                "name": ":Viktor"
+            },
+            {
+                "icon": "",
+                "name": ":kam1kaaze"
+            }]
+        }
+        ]
+    }]
+}
