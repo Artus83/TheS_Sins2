@@ -1,0 +1,47 @@
+{
+    "version": 0,
+    "domain": "military",
+    "tier": 3,
+    "field": "military_mobilization",
+    "field_coord": [6, 5],
+    "research_time": 360.0,
+    "price":
+    {
+        "credits": 1700.0,
+        "metal": 300.0,
+        "crystal": 500.0
+    },
+    "exotic_price": [
+    {
+        "exotic_type": "offense",
+        "count": 1
+    },
+    {
+        "exotic_type": "economic",
+        "count": 2
+    }],
+    "prerequisites": [
+        ["trader_pirate_raid_supply"]
+    ],
+    "windfall":
+    {
+        "units_given":
+        {
+            "required_units": [
+            {
+                "unit": "pirate_king_capital_ship",
+                "count": [1, 1]
+            }]
+        }
+    },
+    "name": "trader_pirate_king_windfall_research_subject_name",
+    "name_uppercase": "trader_pirate_king_windfall_research_subject_name_uppercase",
+    "description": "trader_pirate_king_windfall_research_subject_description",
+    "hud_icon": "pirate_king_captial_ship_hud_icon",
+    "tooltip_picture": "pirate_king_captial_ship_tooltip_picture",
+    "extra_text_filter_strings": [
+        "research_text_filter_faction",
+        "research_text_filter_pirate",
+        "research_text_filter_rebel"
+    ]
+}

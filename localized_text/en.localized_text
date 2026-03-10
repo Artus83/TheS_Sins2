@@ -1,7 +1,7 @@
 {
   "player_faction_name.advent_loyalist": "TBD_Advent",
   "player_faction_name.advent_rebel": "DEPRECATED",
-  "player_faction_name.trader_loyalist": "TBD_TEC",
+  "player_faction_name.trader_loyalist": "TEC",
   "player_faction_name.trader_rebel": "DEPRECATED",
   "player_faction_name.vasari_loyalist": "Vasari",
   "player_faction_name.vasari_rebel": "DEPRECATED",
@@ -32,5 +32,9 @@
   "vasari_unlock_loyalist_titan_hangar_unit_item_research_subject_name_uppercase": "TITAN HANGAR RESTORATION",
   "dlc2_vasari_upgrade_loyalist_super_item_slots_research_subject_description": "The many cavernous cargo bays within the Command Ships are reinforced and subdivided to provide additional space for components.",
   "unlock_ancient_starbase_research_subject_name": "Ancient Starbase Unlock",
-  "unlock_ancient_starbase_research_subject_name_uppercase": "ANCIENT STARBASE UNLOCK"
+  "unlock_ancient_starbase_research_subject_name_uppercase": "ANCIENT STARBASE UNLOCK",
+  "trader_unlock_loyalist_titan_hangar_unit_item_research_subject_name": "Titan Hangar Blueprint",
+  "trader_unlock_loyalist_titan_hangar_unit_item_research_subject_name_uppercase": "TITAN HANGAR BLUEPRINT",
+  "trader_loyalist_titan_hangar_unit_item_name": "Titan Hangar",
+    "trader_loyalist_titan_hangar_unit_item_description": "Gives the titan a complement of strikecraft squadrons."
 }

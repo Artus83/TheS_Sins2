@@ -1,0 +1,41 @@
+{
+    "version": 0,
+    "domain": "military",
+    "tier": 3,
+    "field": "military_experimental",
+    "field_coord": [7, 15],
+    "research_time": 420.0,
+    "price":
+    {
+        "credits": 1750.0,
+        "metal": 325.0,
+        "crystal": 550.0
+    },
+    "exotic_price": [
+    {
+        "exotic_type": "ultimate",
+        "count": 1
+    }],
+    "prerequisites": [
+        ["dlc2_trader_unlock_rebel_super_capital_ship"]
+    ],
+    "bonus_unit_limits":
+    {
+        "global": [
+        {
+            "tag": "super_capital_ship",
+            "unit_limit": 1
+        }]
+    },
+    "name": "dlc2_trader_upgrade_rebel_super_limit_0_research_subject_name",
+    "name_uppercase": "dlc2_trader_upgrade_rebel_super_limit_0_research_subject_name_uppercase",
+    "description": "dlc2_trader_upgrade_rebel_super_limit_0_research_subject_description",
+    "hud_icon": "dlc2_trader_upgrade_rebel_super_limit_0_hud_icon",
+    "tooltip_picture": "dlc2_trader_upgrade_rebel_super_limit_0_tooltip_picture",
+    "arbitary_research_line":
+    {
+        "before_after_heading": "tooltip.research_subject.arbitary_before_after_heading.super_capital_limit",
+        "before_number": 1.0,
+        "after_number": 2.0
+    }
+}
