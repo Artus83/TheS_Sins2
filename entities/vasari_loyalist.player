@@ -480,7 +480,8 @@
         "vasari_repair_platform_structure",
         "vasari_missile_defense_structure",
         "vasari_phase_jump_inhibitor_structure",
-        "vasari_starbase"
+        "vasari_starbase",
+        "vasari_ancient_starbase"
     ],
     "allowed_traffic_ports": [
         "advent_population_structure",
@@ -503,6 +504,10 @@
         {
             "tag": "super_capital_ship",
             "unit_limit": 1
+        },
+        {
+            "tag": "dlc_ancient_starbase",
+            "unit_limit": 1
         }],
         "star": [
         {
@@ -516,6 +521,10 @@
         },
         {
             "tag": "superweapon",
+            "unit_limit": 1
+        },
+        {
+            "tag": "dlc_ancient_starbase",
             "unit_limit": 1
         }]
     },
@@ -1041,7 +1050,8 @@
             "vasari_upgrade_bazaar_unit_item_1",
             "vasari_upgrade_hull_with_trader",
             "vasari_upgrade_npc_ability_cooldown",
-            "vasari_upgrade_shields_with_advent"
+            "vasari_upgrade_shields_with_advent",
+			"vasari_unlock_ancient_starbase"
         ],
         "faction_research_subjects": [
             "vasari_unlock_labor_camp_unit_item",
@@ -1124,7 +1134,8 @@
         "vasari_rebel_titan_unlock_extra_phase_missile_weapons",
         "dlc2_vasari_rebel_super_capital_ship_phase_gate",
         "dlc2_vasari_rebel_super_capital_ship_phasic_comms_net",
-        "dlc2_vasari_rebel_super_capital_ship_mobile_embassy"
+        "dlc2_vasari_rebel_super_capital_ship_mobile_embassy",
+        "vasari_loyalist_titan_mobile_research_complex"
     ],
     "ship_component_build_groups": [
     {

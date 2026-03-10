@@ -30,5 +30,7 @@
   "vasari_loyalist_titan_hangar_unit_item_description": "Gives the titan a complement of strikecraft squadrons.",
   "vasari_unlock_loyalist_titan_hangar_unit_item_research_subject_name": "Titan Hangar Restoration",
   "vasari_unlock_loyalist_titan_hangar_unit_item_research_subject_name_uppercase": "TITAN HANGAR RESTORATION",
-  "dlc2_vasari_upgrade_loyalist_super_item_slots_research_subject_description": "The many cavernous cargo bays within the Command Ships are reinforced and subdivided to provide additional space for components."
+  "dlc2_vasari_upgrade_loyalist_super_item_slots_research_subject_description": "The many cavernous cargo bays within the Command Ships are reinforced and subdivided to provide additional space for components.",
+  "unlock_ancient_starbase_research_subject_name": "Ancient Starbase Unlock",
+  "unlock_ancient_starbase_research_subject_name_uppercase": "ANCIENT STARBASE UNLOCK"
 }
