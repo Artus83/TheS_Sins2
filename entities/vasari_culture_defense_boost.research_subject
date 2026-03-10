@@ -1,0 +1,22 @@
+{
+    "version": 0,
+    "domain": "civilian",
+    "tier": 3,
+    "field": "civilian_oppression",
+    "field_coord": [7, 4],
+    "research_time": 420.0,
+    "price":
+    {
+        "metal": 630.0,
+        "crystal": 720.0,
+        "credits": 0.0
+    },
+    "prerequisites": [
+        ["vasari_rebel_culture_rate_1"]
+    ],
+    "name": "vasari_culture_defense_boost_research_subject_name",
+    "name_uppercase": "vasari_culture_defense_boost_research_subject_name_uppercase",
+    "description": "vasari_culture_defense_boost_research_subject_description",
+    "hud_icon": "vasari_culture_defense_boost_research_subject_hud_icon",
+    "tooltip_picture": "vasari_culture_defense_boost_research_subject_tooltip_picture"
+}

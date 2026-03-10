@@ -1,10 +1,10 @@
 {
-  "player_faction_name.advent_loyalist": "Advent",
-  "player_faction_name.advent_rebel": "Advent Test",
-  "player_faction_name.trader_loyalist": "TEC",
-  "player_faction_name.trader_rebel": "TEC Test",
+  "player_faction_name.advent_loyalist": "TBD_Advent",
+  "player_faction_name.advent_rebel": "DEPRECATED",
+  "player_faction_name.trader_loyalist": "TBD_TEC",
+  "player_faction_name.trader_rebel": "DEPRECATED",
   "player_faction_name.vasari_loyalist": "Vasari",
-  "player_faction_name.vasari_rebel": "Vasari Test",
+  "player_faction_name.vasari_rebel": "DEPRECATED",
   "player_faction_description.advent_loyalist": "The rebellion was crushed.",
   "player_faction_description.advent_rebel": "Only for testing. Do not play!",
   "player_faction_description.trader_loyalist": "The rebellion was crushed.",
@@ -22,5 +22,13 @@
   "test_mode.advanced.name": "Test",
   "test_mode.advanced.description": "Start with everything.",
   "welcome_message": "Flaming Noobs since 2010.",
-  "credits_group_header.Modding": "Modding Team"
+  "credits_group_header.Modding": "Modding Team",
+  "vasari_loyalist_titan_hull_plating_0_unit_item_name": "Titan Hull Plating",
+  "vasari_loyalist_titan_hull_plating_1_unit_item_name": "Titan Hull Plating II",
+  "vasari_loyalist_titan_hull_plating_2_unit_item_name": "Titan Hull Plating III",
+  "vasari_loyalist_titan_hangar_unit_item_name": "Titan Hangar",
+  "vasari_loyalist_titan_hangar_unit_item_description": "Gives the titan a complement of strikecraft squadrons.",
+  "vasari_unlock_loyalist_titan_hangar_unit_item_research_subject_name": "Titan Hangar Restoration",
+  "vasari_unlock_loyalist_titan_hangar_unit_item_research_subject_name_uppercase": "TITAN HANGAR RESTORATION",
+  "dlc2_vasari_upgrade_loyalist_super_item_slots_research_subject_description": "The many cavernous cargo bays within the Command Ships are reinforced and subdivided to provide additional space for components."
 }

@@ -1,0 +1,32 @@
+{
+    "version": 0,
+    "domain": "military",
+    "tier": 4,
+    "field": "military_remnants",
+    "field_coord": [8, 7],
+    "research_time": 525.0,
+    "price":
+    {
+        "metal": 810.0,
+        "crystal": 900.0,
+        "credits": 0.0
+    },
+    "prerequisites": [
+        ["dlc2_vasari_unlock_loyalist_super_capital_ship", "dlc2_vasari_unlock_rebel_super_capital_ship"]
+    ],
+    "name": "dlc2_vasari_upgrade_loyalist_super_item_slots_research_subject_name",
+    "name_uppercase": "dlc2_vasari_upgrade_loyalist_super_item_slots_research_subject_name_uppercase",
+    "description": "dlc2_vasari_upgrade_loyalist_super_item_slots_research_subject_description",
+    "hud_icon": "vasari_upgrade_hull_points_2_research_subject_hud_icon",
+    "tooltip_picture": "vasari_upgrade_hull_points_2_research_subject_tooltip_picture",
+    "extra_text_filter_strings": [
+        "research_text_filter_faction",
+        "research_text_filter_loyalist"
+    ],
+    "arbitary_research_line":
+    {
+        "before_after_heading": "tooltip.research_subject.arbitary_before_after_heading.max_component_slots",
+        "before_number": 6.0,
+        "after_number": 8.0
+    }
+}

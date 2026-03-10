@@ -1,0 +1,22 @@
+{
+    "version": 0,
+    "domain": "civilian",
+    "tier": 2,
+    "field": "civilian_oppression",
+    "field_coord": [5, 4],
+    "research_time": 270.0,
+    "price":
+    {
+        "metal": 450.0,
+        "crystal": 480.0,
+        "credits": 0.0
+    },
+    "prerequisites": [
+        ["vasari_rebel_culture_rate_0"]
+    ],
+    "name": "vasari_culture_factory_unit_build_time_bonus_research_subject_name",
+    "name_uppercase": "vasari_culture_factory_unit_build_time_bonus_research_subject_name_uppercase",
+    "description": "vasari_culture_factory_unit_build_time_bonus_research_subject_description",
+    "hud_icon": "vasari_culture_factory_unit_build_time_bonus_research_subject_hud_icon",
+    "tooltip_picture": "vasari_culture_factory_unit_build_time_bonus_research_subject_tooltip_picture"
+}

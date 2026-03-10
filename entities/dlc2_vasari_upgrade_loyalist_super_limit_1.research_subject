@@ -1,0 +1,41 @@
+{
+    "version": 0,
+    "domain": "military",
+    "tier": 4,
+    "field": "military_remnants",
+    "field_coord": [9, 5],
+    "research_time": 600.0,
+    "price":
+    {
+        "metal": 840.0,
+        "crystal": 960.0,
+        "credits": 0.0
+    },
+    "exotic_price": [
+    {
+        "exotic_type": "ultimate",
+        "count": 2
+    }],
+    "prerequisites": [
+        ["dlc2_vasari_upgrade_loyalist_super_limit_0"]
+    ],
+    "bonus_unit_limits":
+    {
+        "global": [
+        {
+            "tag": "super_capital_ship",
+            "unit_limit": 1
+        }]
+    },
+    "name": "dlc2_vasari_upgrade_loyalist_super_limit_1_research_subject_name",
+    "name_uppercase": "dlc2_vasari_upgrade_loyalist_super_limit_1_research_subject_name_uppercase",
+    "description": "dlc2_vasari_upgrade_loyalist_super_limit_1_research_subject_description",
+    "hud_icon": "dlc2_vasari_upgrade_loyalist_super_limit_1_hud_icon",
+    "tooltip_picture": "dlc2_vasari_upgrade_loyalist_super_limit_1_tooltip_picture",
+    "arbitary_research_line":
+    {
+        "before_after_heading": "tooltip.research_subject.arbitary_before_after_heading.super_capital_limit",
+        "before_number": 2.0,
+        "after_number": 3.0
+    }
+}
