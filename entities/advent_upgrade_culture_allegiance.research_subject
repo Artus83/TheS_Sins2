@@ -1,0 +1,28 @@
+{
+    "version": 0,
+    "domain": "civilian",
+    "tier": 3,
+    "field": "civilian_evangelism",
+    "field_coord": [6, 8],
+    "research_time": 360.0,
+    "price":
+    {
+        "credits": 1100.0,
+        "metal": 425.0,
+        "crystal": 900.0
+    },
+    "prerequisites": [
+        ["advent_upgrade_culture_rate_2"]
+    ],
+    "planet_modifiers": [
+    {
+        "modifier_type": "enemy_population_assimilation_rate",
+        "value_behavior": "scalar",
+        "value": 1.0
+    }],
+    "name": "advent_upgrade_culture_allegiance_research_subject_name",
+    "name_uppercase": "advent_upgrade_culture_allegiance_research_subject_name_uppercase",
+    "description": "advent_upgrade_culture_allegiance_research_subject_description",
+    "hud_icon": "advent_upgrade_culture_allegiance_research_subject_hud_icon",
+    "tooltip_picture": "advent_upgrade_culture_allegiance_research_subject_tooltip_picture"
+}

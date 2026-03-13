@@ -1,5 +1,5 @@
 {
-  "player_faction_name.advent_loyalist": "TBD_Advent",
+  "player_faction_name.advent_loyalist": "Advent",
   "player_faction_name.advent_rebel": "DEPRECATED",
   "player_faction_name.trader_loyalist": "TEC",
   "player_faction_name.trader_rebel": "DEPRECATED",
@@ -36,5 +36,5 @@
   "trader_unlock_loyalist_titan_hangar_unit_item_research_subject_name": "Titan Hangar Blueprint",
   "trader_unlock_loyalist_titan_hangar_unit_item_research_subject_name_uppercase": "TITAN HANGAR BLUEPRINT",
   "trader_loyalist_titan_hangar_unit_item_name": "Titan Hangar",
-    "trader_loyalist_titan_hangar_unit_item_description": "Gives the titan a complement of strikecraft squadrons."
+  "trader_loyalist_titan_hangar_unit_item_description": "Gives the titan a complement of strikecraft squadrons."
 }
