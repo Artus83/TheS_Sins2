@@ -6,6 +6,418 @@
     {
         "groups": [
         {
+            "header": "credits_group_header.lead_programmer",
+            "names": [
+            {
+                "icon": "",
+                "name": ":Jamie Seward"
+            }]
+        },
+        {
+            "header": "credits_group_header.programmers",
+            "names": [
+            {
+                "icon": "",
+                "name": ":Blair Fraser"
+            },
+            {
+                "icon": "",
+                "name": ":Stephen Mackay"
+            },
+            {
+                "icon": "",
+                "name": ":Thomas Fortune"
+            },
+            {
+                "icon": "",
+                "name": ":Ben Jannotta"
+            },
+            {
+                "icon": "",
+                "name": ":Alexander Wardell"
+            },
+            {
+                "icon": "",
+                "name": ":Mark Jarzynski"
+            },
+            {
+                "icon": "",
+                "name": ":Matt Singer"
+            }
+            ]
+        },
+        {
+            "header": "credits_group_header.designers",
+            "names": [
+            {
+                "icon": "",
+                "name": ":Conor Harris"
+            },
+            {
+                "icon": "",
+                "name": ":Blair Fraser"
+            },
+            {
+                "icon": "",
+                "name": ":Stephen Mackay"
+            },
+            {
+                "icon": "",
+                "name": ":Jamie Seward"
+            },
+            {
+                "icon": "",
+                "name": ":Brian Clair"
+            }
+        ]
+        },
+        {
+            "header": "credits_group_header.lore",
+            "names": [
+            {
+                "icon": "",
+                "name": ":Blair Fraser"
+            },
+            {
+                "icon": "",
+                "name": ":Conor Harris"
+            },
+            {
+                "icon": "",
+                "name": ":Stephen Mackay"
+            },
+            {
+                "icon": "",
+                "name": ":Jamie Seward"
+            },
+            {
+                "icon": "",
+                "name": ":Brian Clair"
+            }]
+        },
+        {
+            "header": "credits_group_header.dialogue_writing",
+            "names": [
+            {
+                "icon": "",
+                "name": ":Bryce Raffle"
+            },
+            {
+                "icon": "",
+                "name": ":Blair Fraser"
+            },
+            {
+                "icon": "",
+                "name": ":Stephen Mackay"
+            },
+            {
+                "icon": "",
+                "name": ":Conor Harris"
+            }]
+        },
+        {
+            "header": "credits_group_header.dialogue_directing",
+            "names": [
+            {
+                "icon": "",
+                "name": ":Bryce Raffle"
+            }]
+        },
+        {
+            "header": "credits_group_header.additional_content",
+            "names": [
+            {
+                "icon": "",
+                "name": ":Yaroslav Zabello"
+            }]
+        }]
+    },
+    {
+        "groups": [
+        {
+            "header": "credits_group_header.studiohead",
+            "names": [
+            {
+                "icon": "",
+                "name": ":Brad Wardell"
+            }]
+        },
+        {
+            "header": "credits_group_header.executive_producer",
+            "names": [
+            {
+                "icon": "",
+                "name": ":Brian Clair"
+            }]
+        },
+        {
+            "header": "credits_group_header.director_of_production",
+            "names": [
+            {
+                "icon": "",
+                "name": ":Patrick Shaw"
+            }]
+        },
+        {
+            "header": "credits_group_header.producer",
+            "names": [
+            {
+                "icon": "",
+                "name": ":Chad Farris"
+            },
+            {
+                "icon": "",
+                "name": ":Eve Chang"
+            }]
+        },
+        {
+            "header": "credits_group_header.art_director",
+            "names": [
+            {
+                "icon": "",
+                "name": ":Craig Fraser"
+            }]
+        },
+        {
+            "header": "credits_group_header.artists",
+            "names": [
+            {
+                "icon": "",
+                "name": ":Akil Dawkins"
+            },
+            {
+                "icon": "",
+                "name": ":Paul Kiesling"
+            },
+            {
+                "icon": "",
+                "name": ":Chaminda Nissanka"
+            },
+            {
+                "icon": "",
+                "name": ":Ryan Wardell"
+            },
+            {
+                "icon": "",
+                "name": ":Drew Olynick"
+            },
+            {
+                "icon": "",
+                "name": ":Jared Harris"
+            },
+            {
+                "icon": "",
+                "name": ":Danilo Oliveira"
+            },
+            {
+                "icon": "",
+                "name": ":Paul Boyer"
+            },
+            {
+                "icon": "",
+                "name": ":Joe Lopatta"
+            },
+            {
+                "icon": "",
+                "name": ":Jason Calloway"
+            }]
+        },
+        {
+            "header": "credits_group_header.concept_artists",
+            "names": [
+            {
+                "icon": "",
+                "name": ":Mike Doscher"
+            },
+            {
+                "icon": "",
+                "name": ":Till Freitag"
+            },
+            {
+                "icon": "",
+                "name": ":Francois Cannels"
+            },
+            {
+                "icon": "",
+                "name": ":Joel Durham"
+            },
+            {
+                "icon": "",
+                "name": ":Vitaliy Ostaschenko"
+            },
+            {
+                "icon": "",
+                "name": ":Bogdan Tufecciu"
+            },
+            {
+                "icon": "",
+                "name": ":Dmitry Yepik"
+            }]
+        }]
+    },
+    {
+        "groups": [
+        {
+            "header": "credits_group_header.music",
+            "names": [
+            {
+                "icon": "",
+                "name": ":Paul Schuegraf"
+            }]
+        },
+        {
+            "header": "credits_group_header.business",
+            "names": [
+            {
+                "icon": "",
+                "name": ":Chris Kowal"
+            },
+            {
+                "icon": "",
+                "name": ":Brian Clair"
+            }]
+        },
+        {
+            "header": "credits_group_header.it",
+            "names": [
+            {
+                "icon": "",
+                "name": ":Josh Andrews"
+            },
+            {
+                "icon": "",
+                "name": ":Matthew Gray"
+            }]
+        },
+        {
+            "header": "credits_group_header.marketing",
+            "names": [
+            {
+                "icon": "",
+                "name": ":Katie Spangler"
+            },
+            {
+                "icon": "",
+                "name": ":Jillian Santos"
+            },
+            {
+                "icon": "",
+                "name": ":Benjamin Kirkman-Halford"
+            },
+            {
+                "icon": "",
+                "name": ":Jayna Querio"
+            }]
+        },
+        {
+            "header": "credits_group_header.community",
+            "names": [
+            {
+                "icon": "",
+                "name": ":Hamayel Ali"
+            },
+            {
+                "icon": "",
+                "name": ":Yaroslav Zabello"
+            }]
+        },
+        {
+            "header": "credits_group_header.qa",
+            "names": [
+            {
+                "icon": "",
+                "name": ":Jeff Sanders"
+            },
+            {
+                "icon": "",
+                "name": ":Ken Janeczko"
+            },
+            {
+                "icon": "",
+                "name": ":Devin Swanner"
+            },
+            {
+                "icon": "",
+                "name": ":Ryan Milford"
+            }]
+        },
+        {
+            "header": "credits_group_header.support",
+            "names": [
+            {
+                "icon": "",
+                "name": ":Sean Drohan"
+            },
+            {
+                "icon": "",
+                "name": ":Adam McGuinness"
+            }]
+        }]
+    },
+    {
+        "groups": [
+        {
+            "header": "credits_group_header.additional_support",
+            "names": [
+            {
+                "icon": "",
+                "name": ":TransPerfect Gaming"
+            },
+            {
+                "icon": "",
+                "name": ":Unlock Audio"
+            },
+            {
+                "icon": "",
+                "name": ":Exis"
+            }]
+        },
+        {
+            "header": "credits_group_header.audio_engine",
+            "names": [
+            {
+                "icon": "",
+                "name": ":FMOD Studio by"
+            },
+            {
+                "icon": "",
+                "name": ":Firelight Technologies Pty Ltd."
+            }]
+        },
+        {
+            "header": "credits_group_header.localization",
+            "names": [
+            {
+                "icon": "",
+                "name": ":Michael Sykes (German)"
+            },
+            {
+                "icon": "",
+                "name": ":Sonkwo (Simplified Chinese)"
+            },
+            {
+                "icon": "",
+                "name": ":Eve Chan (Simplified Chinese)"
+            },
+            {
+                "icon": "",
+                "name": ":onigi (Japanese)"
+            },
+            {
+                "icon": "",
+                "name": ":Zsolt Petrován 'Pezso' (Hungarian)"
+            },
+            {
+                "icon": "",
+                "name": ":Brooke Raths"
+            },
+            {
+                "icon": "",
+                "name": ":Jerry Cortez"
+            }
+        ]
+        },
+        {
             "header": "credits_group_header.Modding",
             "names": [
             {
@@ -14,9 +426,12 @@
             },
             {
                 "icon": "",
+                "name": ":Laurelle"
+            },
+            {
+                "icon": "",
                 "name": ":kam1kaaze"
             }]
-        }
-        ]
+        }]
     }]
 }
