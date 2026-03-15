@@ -1,0 +1,25 @@
+{
+    "version": 0,
+    "overwrite_start_modes": true,
+    "start_modes": [
+    {
+        "name": "basic",
+        "entity": "basic_start_mode"
+    },
+    {
+        "name": "normal",
+        "entity": "normal_start_mode"
+    },
+    {
+        "name": "quick",
+        "entity": "quick_start_mode"
+    },
+    {
+        "name": "advanced",
+        "entity": "advanced_start_mode"
+    },
+    {
+        "name": "thes",
+        "entity": "thes_start_mode"
+    }]
+}
