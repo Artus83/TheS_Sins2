@@ -1,0 +1,175 @@
+{
+    "version": 0,
+    "race": "trader",
+    "home_planet":
+    {},
+    "starting_units_in_gravity_well":
+    {
+        "random_units": [
+        {
+            "unit": "trader_light_frigate",
+            "weight": 1.0
+        }]
+    },
+    "unit_limits":
+    {},
+    "npc":
+    {
+        "visuals": [
+        {
+            "name": "npc_player_name.guardian",
+            "icon": "guardian_0",
+            "color_group": "guardian"
+        }],
+        "start_allied_to_playable_players": false,
+        "start_allied_to_other_npc_players": false,
+        "start_allied_to_militia_npc_players": true,
+        "militia":
+        {
+            "militia_spawn_units": [
+            {
+                "spawned_units":
+                {
+                    "required_units": [
+                    {
+                        "unit": "trader_light_frigate",
+                        "count": [4, 14]
+                    },
+                    {
+                        "unit": "trader_antifighter_frigate",
+                        "count": [4, 8]
+                    },
+                    {
+                        "unit": "trader_long_range_cruiser",
+                        "count": [4, 6]
+                    },
+                    {
+                        "unit": "trader_heavy_cruiser",
+                        "count": [4, 6]
+                    },
+                    {
+                        "unit": "trader_siege_frigate",
+                        "count": [6, 6]
+                    }],
+                    "random_units": [
+                    {
+                        "unit": "trader_light_frigate",
+                        "weight": 6.0
+                    },
+                    {
+                        "unit": "trader_antifighter_frigate",
+                        "weight": 3.0
+                    },
+                    {
+                        "unit": "trader_long_range_cruiser",
+                        "weight": 2.0
+                    },
+                    {
+                        "unit": "trader_heavy_cruiser",
+                        "weight": 2.0
+                    }]
+                },
+                "supply_threshold": 250
+            },
+            {
+                "spawned_units":
+                {
+                    "required_units": [
+                    {
+                        "unit": "trader_light_frigate",
+                        "count": [4, 4]
+                    },
+                    {
+                        "unit": "trader_antifighter_frigate",
+                        "count": [2, 4]
+                    },
+                    {
+                        "unit": "trader_long_range_cruiser",
+                        "count": [2, 4]
+                    },
+                    {
+                        "unit": "trader_siege_frigate",
+                        "count": [4, 4]
+                    }],
+                    "random_units": [
+                    {
+                        "unit": "trader_light_frigate",
+                        "weight": 3.0
+                    },
+                    {
+                        "unit": "trader_antifighter_frigate",
+                        "weight": 2.0
+                    },
+                    {
+                        "unit": "trader_long_range_cruiser",
+                        "weight": 2.0
+                    }]
+                },
+                "supply_threshold": 160
+            },
+            {
+                "spawned_units":
+                {
+                    "required_units": [
+                    {
+                        "unit": "trader_light_frigate",
+                        "count": [2, 6]
+                    },
+                    {
+                        "unit": "trader_antifighter_frigate",
+                        "count": [2, 2]
+                    },
+                    {
+                        "unit": "trader_siege_frigate",
+                        "count": [2, 2]
+                    }],
+                    "random_units": [
+                    {
+                        "unit": "trader_light_frigate",
+                        "weight": 1.0
+                    }]
+                },
+                "supply_threshold": 32
+            },
+            {
+                "spawned_units":
+                {
+                    "random_units": [
+                    {
+                        "unit": "trader_light_frigate",
+                        "weight": 1.0
+                    }]
+                },
+                "supply_threshold": 0
+            }]
+        },
+        "simple_planet_tracks":
+        {
+            "defense":
+            {
+                "max_health_points": 2000.0,
+                "health_points_restore_rate": 1.0
+            },
+            "logistics":
+            {},
+            "commerce":
+            {
+                "credits_income_rate": 0.5,
+                "credits_income_rate_per_population": 0.005
+            },
+            "mining":
+            {
+                "metal_income_rate": 2.0,
+                "crystal_income_rate": 1.0,
+                "metal_income_rate_per_population": 0.02,
+                "crystal_income_rate_per_population": 0.01
+            },
+            "research":
+            {},
+            "surveying":
+            {},
+            "focus":
+            {}
+        }
+    }
+}
