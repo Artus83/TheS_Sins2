@@ -4289,6 +4289,40 @@
             ]
         }
     }],
+    "garrison":
+    {
+        "spawn_type": "build_from_factory",
+        "special_operation_unit_kind": "garrison",
+        "build_kinds": [
+        {
+            "build_kind": "capital_ship"
+        },
+        {
+            "build_kind": "super_capital_ship"
+        }],
+        "factory_build_time_scalar": 1.5,
+        "units":
+        {
+            "random_units": [
+            {
+                "unit": "vasari_battle_capital_ship",
+                "weight": 20.0
+            },
+            {
+                "unit": "vasari_carrier_capital_ship",
+                "weight": 10.0
+            },
+            {
+                "unit": "dlc2_vasari_loyalist_super_capital_ship",
+                "weight": 5.0
+            },
+            {
+                "unit": "dlc2_vasari_rebel_super_capital_ship",
+                "weight": 5.0
+            }]
+        },
+        "base_max_supply": 0
+    },
     "phase_resonance":
     {
         "levels": [

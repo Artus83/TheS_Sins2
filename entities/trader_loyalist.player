@@ -5214,48 +5214,37 @@
         "special_operation_unit_kind": "garrison",
         "build_kinds": [
         {
-            "build_kind": "corvette"
+            "build_kind": "cruiser"
         },
         {
-            "build_kind": "frigate"
+            "build_kind": "capital_ship"
         },
         {
-            "build_kind": "cruiser",
-            "prerequisites": [
-                ["trader_unlock_heavy_garrison"]
-            ]
+            "build_kind": "super_capital_ship"
         }],
         "factory_build_time_scalar": 1.5,
         "units":
         {
             "random_units": [
             {
-                "unit": "trader_light_frigate",
-                "weight": 30.0
+                "unit": "trader_robotics_cruiser",
+                "weight": 50.0
             },
             {
-                "unit": "trader_heavy_cruiser",
+                "unit": "trader_battle_capital_ship",
                 "weight": 20.0
             },
             {
-                "unit": "trader_long_range_cruiser",
-                "weight": 20.0
+                "unit": "trader_carrier_capital_ship",
+                "weight": 10.0
             },
             {
-                "unit": "trader_skirmisher_corvette_frigate",
-                "weight": 20.0
+                "unit": "dlc2_trader_loyalist_super_capital_ship",
+                "weight": 5.0
             },
             {
-                "unit": "trader_missile_corvette",
-                "weight": 20.0
-            },
-            {
-                "unit": "trader_antifighter_frigate",
-                "weight": 30.0
-            },
-            {
-                "unit": "trader_antiarmor_frigate",
-                "weight": 20.0
+                "unit": "dlc2_trader_rebel_super_capital_ship",
+                "weight": 5.0
             }]
         },
         "base_max_supply": 0

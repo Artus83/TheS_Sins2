@@ -5169,6 +5169,47 @@
             ]
         }
     }],
+    "garrison":
+    {
+        "spawn_type": "build_from_factory",
+        "special_operation_unit_kind": "garrison",
+        "build_kinds": [
+        {
+            "build_kind": "cruiser"
+        },
+        {
+            "build_kind": "capital_ship"
+        },
+        {
+            "build_kind": "super_capital_ship"
+        }],
+        "factory_build_time_scalar": 1.5,
+        "units":
+        {
+            "random_units": [
+            {
+                "unit": "advent_guardian_cruiser",
+                "weight": 50.0
+            },
+            {
+                "unit": "advent_battle_capital_ship",
+                "weight": 20.0
+            },
+            {
+                "unit": "advent_carrier_capital_ship",
+                "weight": 10.0
+            },
+            {
+                "unit": "dlc2_advent_loyalist_super_capital_ship",
+                "weight": 5.0
+            },
+            {
+                "unit": "dlc2_advent_rebel_super_capital_ship",
+                "weight": 5.0
+            }]
+        },
+        "base_max_supply": 0
+    },
     "unity":
     {
         "base_max_mana": 100.0,
