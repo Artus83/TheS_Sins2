@@ -1,0 +1,13 @@
+{
+    "version": 0,
+    "action_values": [
+        {
+            "action_value_id": "experience_rate_per_minute",
+            "action_value": {
+                "values": [
+                    50.0
+                ]
+            }
+        }
+    ]
+}

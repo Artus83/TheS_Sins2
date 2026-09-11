@@ -1,0 +1,45 @@
+{
+    "version": 0,
+    "domain": "civilian",
+    "tier": 0,
+    "field": "passive",
+    "field_coord": [
+        0,
+        0
+    ],
+    "research_time": 1.0,
+    "price": {
+        "credits": 0.0,
+        "metal": 0.0,
+        "crystal": 0.0
+    },
+    "exotic_price": [
+        {
+            "exotic_type": "ultimate",
+            "count": 9999
+        }
+    ],
+    "prerequisites": [],
+    "buff_providers": [
+        {
+            "scope": "all_owned_units",
+            "all_owned_units_target_filter": {
+                "ownerships": [
+                    "self"
+                ],
+                "constraints": [
+                    {
+                        "constraint_type": "has_experience"
+                    }
+                ]
+            },
+            "action_data_source": "passive_experience",
+            "buff": "passive_experience"
+        }
+    ],
+    "name": "passive_experience_research_subject_name",
+    "name_uppercase": "passive_experience_research_subject_name_uppercase",
+    "description": "passive_experience_research_subject_description",
+    "hud_icon": "advent_passive_experience_research_subject_hud_icon",
+    "tooltip_picture": "advent_passive_experience_research_subject_tooltip_picture"
+}

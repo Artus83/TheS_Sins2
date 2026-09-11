@@ -694,6 +694,11 @@
                     "id": "civilian_coercion",
                     "name": "dlc3_herald_research_field_name_civilian_coercion",
                     "picture": "herald_research_field_picture_civilian_coercion"
+                },
+                {
+                    "id": "passive",
+                    "name": "dlc3_herald_research_field_name_military_arrival",
+                    "picture": "herald_research_field_picture_military_arrival"
                 }],
                 "full_name": "dlc3_herald_research_domain_full_name_civilian",
                 "partial_name": "dlc3_herald_research_domain_partial_name_civilian",
@@ -1035,7 +1040,8 @@
             "dlc3_herald_upgrade_void_missile_weapon_damage_0",
             "dlc3_herald_upgrade_void_missile_weapon_damage_1",
             "dlc3_herald_upgrade_void_missile_weapon_damage_2",
-            "dlc3_herald_upgrade_void_missile_weapon_targeting"
+            "dlc3_herald_upgrade_void_missile_weapon_targeting",
+            "passive_experience"
         ],
         "faction_research_subjects": [
             "dlc3_herald_unlock_afterimage",

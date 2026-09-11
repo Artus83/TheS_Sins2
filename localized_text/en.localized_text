@@ -38,5 +38,8 @@
   "trader_loyalist_titan_hangar_unit_item_name": "Titan Hangar",
   "trader_loyalist_titan_hangar_unit_item_description": "Gives the titan a complement of strikecraft squadrons.",
   "start_mode.thes.description": "The standard TheSins II starting configuration.",
-  "start_mode.thes.name": "TheS"
+  "start_mode.thes.name": "TheS",
+  "passive_experience_research_subject_name": "Passive Experience",
+  "passive_experience_research_subject_name_uppercase": "PASSIVE EXPERIENCE",
+  "passive_experience_research_subject_description": "Ships slowly gain experience while within their owner's dominant culture."
 }

@@ -656,6 +656,11 @@
                         "id": "civilian_phase_mastery",
                         "name": "vasari_research_field_name_civilian_phase_mastery",
                         "picture": "vasari_research_field_picture_civilian_phase_mastery"
+                    },
+                    {
+                        "id": "passive",
+                        "name": "dlc3_herald_research_field_name_military_arrival",
+                        "picture": "herald_research_field_picture_military_arrival"
                     }
                 ],
                 "full_name": "vasari_research_domain_full_name_civilian",
@@ -1036,7 +1041,8 @@
             "vasari_unlock_missile_defense_disruptor_nanites_ability",
             "vasari_unlock_starbase_charged_salvo_unit_item",
             "vasari_unlock_starbase_upgrade_wave_weapons_unit_item",
-            "dlc3_vasari_shroud_removal"
+            "dlc3_vasari_shroud_removal",
+            "passive_experience"
         ],
         "faction_research_subjects": [
             "vasari_unlock_labor_camp_unit_item",

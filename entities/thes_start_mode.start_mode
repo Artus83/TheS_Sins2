@@ -78,7 +78,9 @@
                 ]
             },
             "starting_research": {
-                "starting_research_subjects": []
+                "starting_research_subjects": [
+                    "passive_experience"
+                ]
             },
             "starting_player_inventory_items": [],
             "additional_starting_planets": {
@@ -163,7 +165,9 @@
                 ]
             },
             "starting_research": {
-                "starting_research_subjects": []
+                "starting_research_subjects": [
+                    "passive_experience"
+                ]
             },
             "starting_player_inventory_items": [],
             "additional_starting_planets": {
@@ -241,7 +245,9 @@
                 ]
             },
             "starting_research": {
-                "starting_research_subjects": []
+                "starting_research_subjects": [
+                    "passive_experience"
+                ]
             },
             "starting_player_inventory_items": [],
             "additional_starting_planets": {
@@ -319,7 +325,9 @@
                 ]
             },
             "starting_research": {
-                "starting_research_subjects": []
+                "starting_research_subjects": [
+                    "passive_experience"
+                ]
             },
             "starting_player_inventory_items": [],
             "additional_starting_planets": {
@@ -402,7 +410,9 @@
                 ]
             },
             "starting_research": {
-                "starting_research_subjects": []
+                "starting_research_subjects": [
+                    "passive_experience"
+                ]
             },
             "starting_player_inventory_items": [],
             "additional_starting_planets": {
@@ -485,7 +495,9 @@
                 ]
             },
             "starting_research": {
-                "starting_research_subjects": []
+                "starting_research_subjects": [
+                    "passive_experience"
+                ]
             },
             "starting_player_inventory_items": [],
             "additional_starting_planets": {
@@ -574,7 +586,9 @@
                 }
             },
             "starting_research": {
-                "starting_research_subjects": []
+                "starting_research_subjects": [
+                    "passive_experience"
+                ]
             },
             "starting_player_inventory_items": [],
             "additional_starting_planets": {
