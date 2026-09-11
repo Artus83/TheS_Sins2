@@ -5495,7 +5495,7 @@
             "random_units": [
                 {
                     "unit": "trader_robotics_cruiser",
-                    "weight": 50.0
+                    "weight": 40.0
                 },
                 {
                     "unit": "trader_battle_capital_ship",
@@ -5515,7 +5515,7 @@
                 }
             ]
         },
-        "base_max_supply": 0
+        "base_max_supply": 100
     },
     "trade": {
         "trade_income_rates": {
@@ -5528,9 +5528,9 @@
         },
         "trade_ship_escorts": [
             {
-                "unit": "trader_antifighter_frigate",
+                "unit": "trader_heavy_cruiser",
                 "special_operation_unit_kind": "trade_escort",
-                "count_per_trade_ship": 1,
+                "count_per_trade_ship": 2,
                 "research_prerequisites": [
                     [
                         "trader_unlock_trade_escorts_0"
@@ -5539,9 +5539,9 @@
                 "construction_time": 60
             },
             {
-                "unit": "trader_heavy_cruiser",
+                "unit": "trader_carrier_cruiser",
                 "special_operation_unit_kind": "trade_escort",
-                "count_per_trade_ship": 1,
+                "count_per_trade_ship": 2,
                 "research_prerequisites": [
                     [
                         "trader_unlock_trade_escorts_1"

@@ -4548,7 +4548,7 @@
                 }
             ]
         },
-        "base_max_supply": 0
+        "base_max_supply": 100
     },
     "phase_resonance": {
         "levels": [
