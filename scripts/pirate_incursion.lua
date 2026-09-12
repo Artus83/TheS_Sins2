@@ -45,49 +45,26 @@ local CONFIG = {
     -- Spawned wave units are uncontrollable and do not consume normal fleet supply.
     special_operation_kind = "trade_escort",
 
-    -- Global wave settings.
-    -- The last configured wave repeats indefinitely.
-    -- level applies to every mandatory/eligible ship in that wave unless the ship entry
-    -- explicitly defines its own level.
-    waves = {
-        {
-            supply = 100,
-            level = 3
-        },
-        { --30
-            supply = 250,
-            level = 4
-        },
-        {
-            supply = 500,
-            level = 4
-        },
-        { --60
-            supply = 1000,
-            level = 5,
-            elite = 1
-        },
-        {
-            supply = 1500,
-            level = 5
-        },
-        { --90
-            supply = 2000,
-            level = 5
-        },
-        {
-            supply = 2000,
-            level = 6
-        },
-        { --120
-            supply = 2400,
-            level = 6,
-            elite = 2
-        },
-        { --endless
-            supply = 2400,
-            level = 6
-        }
+    -- Supply progression.
+    -- Supply scales linearly from supply_start at time 0
+    -- to supply_end at supply_end_time, then stays at supply_end.
+    supply_start = 100,
+    supply_end = 2400,
+    supply_end_time = 8100,
+
+    -- Ship level progression.
+    -- Level is threshold-based and does not interpolate.
+    level_timeline = {
+        { time = 0,    level = 3 },
+        { time = 900,  level = 4 },
+        { time = 2700, level = 5 },
+        { time = 5400, level = 6 }
+    },
+
+    -- Elite events fire once on the first incursion wave at or after their configured time.
+    elite_events = {
+        { time = 2700, elite = 1 },
+        { time = 6300, elite = 2 }
     },
 
     -- Ship artifacts available for boss/special ship definitions.
@@ -208,12 +185,11 @@ local CONFIG = {
     --
     -- mandatory_ships:
     --   Always processed before weighted ships and always count against the wave supply.
-    --   unlock_wave is the first wave on which the mandatory ship is present.
     --
     -- possible_ships:
-    --   Each entry has its own unlock_wave and weight.
+    --   Each entry has its own unlock_time in game seconds and weight.
     --   Equal weights are selected approximately evenly.
-    --   Set unlock_wave to 999 to keep a ship configured but disabled for the current setup.
+    --   Very large unlock_time values keep a ship configured but disabled for normal play.
     --
     -- Optional per-ship fields supported in both lists:
     --   level = N
@@ -227,35 +203,34 @@ local CONFIG = {
             mandatory_ships = {
                 {
                     unit = "trader_colony_capital_ship",
-                    count = 1,
-                    unlock_wave = 1
+                    count = 1
                 }
             },
 
             possible_ships = {
                 -- Cruisers
-                { unit = "trader_carrier_cruiser",       unlock_wave = 2,   weight = 32 },
-                { unit = "trader_heavy_cruiser",         unlock_wave = 1,   weight = 56 },
-                { unit = "trader_command_cruiser",       unlock_wave = 999, weight = 1 },
-                { unit = "trader_long_range_cruiser",    unlock_wave = 999, weight = 1 },
-                { unit = "trader_medium_cruiser",        unlock_wave = 999, weight = 1 },
-                { unit = "trader_robotics_cruiser",      unlock_wave = 3,   weight = 40 },
-                { unit = "trader_torpedo_cruiser",       unlock_wave = 4,   weight = 32 },
+                { unit = "trader_carrier_cruiser",       unlock_time = 900,   weight = 32 },
+                { unit = "trader_heavy_cruiser",         unlock_time = 0,   weight = 56 },
+                { unit = "trader_command_cruiser",       unlock_time = 899100, weight = 1 },
+                { unit = "trader_long_range_cruiser",    unlock_time = 899100, weight = 1 },
+                { unit = "trader_medium_cruiser",        unlock_time = 899100, weight = 1 },
+                { unit = "trader_robotics_cruiser",      unlock_time = 1800,   weight = 40 },
+                { unit = "trader_torpedo_cruiser",       unlock_time = 2700,   weight = 32 },
 
                 -- Capital ships
-                { unit = "trader_battle_capital_ship",   unlock_wave = 3, weight = 12 },
-                { unit = "trader_carrier_capital_ship",  unlock_wave = 3, weight = 8 },
-                { unit = "trader_colony_capital_ship",   unlock_wave = 3, weight = 4 },
-                { unit = "trader_siege_capital_ship",    unlock_wave = 3, weight = 4 },
-                { unit = "trader_support_capital_ship",  unlock_wave = 3, weight = 4 },
+                { unit = "trader_battle_capital_ship",   unlock_time = 1800, weight = 12 },
+                { unit = "trader_carrier_capital_ship",  unlock_time = 1800, weight = 8 },
+                { unit = "trader_colony_capital_ship",   unlock_time = 1800, weight = 4 },
+                { unit = "trader_siege_capital_ship",    unlock_time = 1800, weight = 4 },
+                { unit = "trader_support_capital_ship",  unlock_time = 1800, weight = 4 },
 
                 -- Super capital ships: both branches are available in the merged faction.
-                { unit = "dlc2_trader_loyalist_super_capital_ship", unlock_wave = 7, weight = 2 },
-                { unit = "dlc2_trader_rebel_super_capital_ship",    unlock_wave = 7, weight = 2 },
+                { unit = "dlc2_trader_loyalist_super_capital_ship", unlock_time = 5400, weight = 2 },
+                { unit = "dlc2_trader_rebel_super_capital_ship",    unlock_time = 5400, weight = 2 },
 
                 -- Titans: both branches are available in the merged faction.
-                { unit = "trader_loyalist_titan",        unlock_wave = 9, weight = 1 },
-                { unit = "trader_rebel_titan",           unlock_wave = 9, weight = 1 }
+                { unit = "trader_loyalist_titan",        unlock_time = 7200, weight = 1 },
+                { unit = "trader_rebel_titan",           unlock_time = 7200, weight = 1 }
             }
         },
 
@@ -265,35 +240,34 @@ local CONFIG = {
             mandatory_ships = {
                 {
                     unit = "advent_colony_capital_ship",
-                    count = 1,
-                    unlock_wave = 1
+                    count = 1
                 }
             },
 
             possible_ships = {
                 -- Cruisers
-                { unit = "advent_carrier_cruiser",       unlock_wave = 2,   weight = 40 },
-                { unit = "advent_heavy_cruiser",         unlock_wave = 1,   weight = 56 },
-                { unit = "advent_defense_cruiser",       unlock_wave = 999, weight = 1 },
-                { unit = "advent_guardian_cruiser",      unlock_wave = 3  , weight = 32 },
-                { unit = "advent_long_range_cruiser",    unlock_wave = 4,   weight = 32 },
-                { unit = "advent_medium_cruiser",        unlock_wave = 999, weight = 1 },
-                { unit = "advent_subjugator_cruiser",    unlock_wave = 999, weight = 1 },
+                { unit = "advent_carrier_cruiser",       unlock_time = 900,   weight = 40 },
+                { unit = "advent_heavy_cruiser",         unlock_time = 0,   weight = 56 },
+                { unit = "advent_defense_cruiser",       unlock_time = 899100, weight = 1 },
+                { unit = "advent_guardian_cruiser",      unlock_time = 1800  , weight = 32 },
+                { unit = "advent_long_range_cruiser",    unlock_time = 2700,   weight = 32 },
+                { unit = "advent_medium_cruiser",        unlock_time = 899100, weight = 1 },
+                { unit = "advent_subjugator_cruiser",    unlock_time = 899100, weight = 1 },
 
                 -- Capital ships
-                { unit = "advent_battle_capital_ship",           unlock_wave = 3, weight = 12 },
-                { unit = "advent_battle_psionic_capital_ship",   unlock_wave = 3, weight = 8 },
-                { unit = "advent_carrier_capital_ship",          unlock_wave = 3, weight = 4 },
-                { unit = "advent_colony_capital_ship",           unlock_wave = 3, weight = 4 },
-                { unit = "advent_planet_psionic_capital_ship",   unlock_wave = 3, weight = 4 },
+                { unit = "advent_battle_capital_ship",           unlock_time = 1800, weight = 12 },
+                { unit = "advent_battle_psionic_capital_ship",   unlock_time = 1800, weight = 8 },
+                { unit = "advent_carrier_capital_ship",          unlock_time = 1800, weight = 4 },
+                { unit = "advent_colony_capital_ship",           unlock_time = 1800, weight = 4 },
+                { unit = "advent_planet_psionic_capital_ship",   unlock_time = 1800, weight = 4 },
 
                 -- Super capital ships: both branches are available in the merged faction.
-                { unit = "dlc2_advent_loyalist_super_capital_ship", unlock_wave = 7, weight = 2 },
-                { unit = "dlc2_advent_rebel_super_capital_ship",    unlock_wave = 7, weight = 2 },
+                { unit = "dlc2_advent_loyalist_super_capital_ship", unlock_time = 5400, weight = 2 },
+                { unit = "dlc2_advent_rebel_super_capital_ship",    unlock_time = 5400, weight = 2 },
 
                 -- Titans: both branches are available in the merged faction.
-                { unit = "advent_loyalist_titan",         unlock_wave = 9, weight = 1 },
-                { unit = "advent_rebel_titan",            unlock_wave = 9, weight = 1 }
+                { unit = "advent_loyalist_titan",         unlock_time = 7200, weight = 1 },
+                { unit = "advent_rebel_titan",            unlock_time = 7200, weight = 1 }
             }
         },
 
@@ -303,35 +277,34 @@ local CONFIG = {
             mandatory_ships = {
                 {
                     unit = "vasari_colony_capital_ship",
-                    count = 1,
-                    unlock_wave = 1
+                    count = 1
                 }
             },
 
             possible_ships = {
                 -- Cruisers
-                { unit = "vasari_carrier_cruiser",        unlock_wave = 2,   weight = 64 },
-                { unit = "vasari_heavy_cruiser",          unlock_wave = 1,   weight = 96 },
-                { unit = "vasari_antiarmor_cruiser",      unlock_wave = 999, weight = 1 },
-                { unit = "vasari_colony_cruiser",         unlock_wave = 999, weight = 1 },
-                { unit = "vasari_fabricator_cruiser",     unlock_wave = 999, weight = 1 },
-                { unit = "vasari_overseer_cruiser",       unlock_wave = 999, weight = 1 },
-                { unit = "vasari_siege_cruiser",          unlock_wave = 999, weight = 1 },
+                { unit = "vasari_carrier_cruiser",        unlock_time = 900,   weight = 64 },
+                { unit = "vasari_heavy_cruiser",          unlock_time = 0,   weight = 96 },
+                { unit = "vasari_antiarmor_cruiser",      unlock_time = 899100, weight = 1 },
+                { unit = "vasari_colony_cruiser",         unlock_time = 899100, weight = 1 },
+                { unit = "vasari_fabricator_cruiser",     unlock_time = 899100, weight = 1 },
+                { unit = "vasari_overseer_cruiser",       unlock_time = 899100, weight = 1 },
+                { unit = "vasari_siege_cruiser",          unlock_time = 899100, weight = 1 },
 
                 -- Capital ships
-                { unit = "vasari_battle_capital_ship",    unlock_wave = 3, weight = 12 },
-                { unit = "vasari_carrier_capital_ship",   unlock_wave = 3, weight = 8 },
-                { unit = "vasari_colony_capital_ship",    unlock_wave = 3, weight = 4 },
-                { unit = "vasari_marauder_capital_ship",  unlock_wave = 3, weight = 4 },
-                { unit = "vasari_siege_capital_ship",     unlock_wave = 3, weight = 4 },
+                { unit = "vasari_battle_capital_ship",    unlock_time = 1800, weight = 12 },
+                { unit = "vasari_carrier_capital_ship",   unlock_time = 1800, weight = 8 },
+                { unit = "vasari_colony_capital_ship",    unlock_time = 1800, weight = 4 },
+                { unit = "vasari_marauder_capital_ship",  unlock_time = 1800, weight = 4 },
+                { unit = "vasari_siege_capital_ship",     unlock_time = 1800, weight = 4 },
 
                 -- Super capital ships: both branches are available in the merged faction.
-                { unit = "dlc2_vasari_loyalist_super_capital_ship", unlock_wave = 7, weight = 2 },
-                { unit = "dlc2_vasari_rebel_super_capital_ship",    unlock_wave = 7, weight = 2 },
+                { unit = "dlc2_vasari_loyalist_super_capital_ship", unlock_time = 5400, weight = 2 },
+                { unit = "dlc2_vasari_rebel_super_capital_ship",    unlock_time = 5400, weight = 2 },
 
                 -- Titans: both branches are available in the merged faction.
-                { unit = "vasari_loyalist_titan",         unlock_wave = 9, weight = 1 },
-                { unit = "vasari_rebel_titan",            unlock_wave = 9, weight = 1 }
+                { unit = "vasari_loyalist_titan",         unlock_time = 7200, weight = 1 },
+                { unit = "vasari_rebel_titan",            unlock_time = 7200, weight = 1 }
             }
         },
 
@@ -341,31 +314,30 @@ local CONFIG = {
             mandatory_ships = {
                 {
                     unit = "dlc3_herald_colony_capital_ship",
-                    count = 1,
-                    unlock_wave = 1
+                    count = 1
                 }
             },
 
             possible_ships = {
                 -- Cruisers
-                { unit = "dlc3_herald_carrier_cruiser",       unlock_wave = 1,   weight = 96 },
-                { unit = "dlc3_herald_corruptor_cruiser",     unlock_wave = 999, weight = 1 },
-                { unit = "dlc3_herald_defiler_cruiser",       unlock_wave = 999, weight = 1 },
-                { unit = "dlc3_herald_long_range_cruiser",    unlock_wave = 4,   weight = 64 },
-                { unit = "dlc3_herald_siege_cruiser",         unlock_wave = 999, weight = 1 },
+                { unit = "dlc3_herald_carrier_cruiser",       unlock_time = 0,   weight = 96 },
+                { unit = "dlc3_herald_corruptor_cruiser",     unlock_time = 899100, weight = 1 },
+                { unit = "dlc3_herald_defiler_cruiser",       unlock_time = 899100, weight = 1 },
+                { unit = "dlc3_herald_long_range_cruiser",    unlock_time = 2700,   weight = 64 },
+                { unit = "dlc3_herald_siege_cruiser",         unlock_time = 899100, weight = 1 },
 
                 -- Capital ships
-                { unit = "dlc3_herald_battle_capital_ship",   unlock_wave = 3, weight = 12 },
-                { unit = "dlc3_herald_carrier_capital_ship",  unlock_wave = 3, weight = 8 },
-                { unit = "dlc3_herald_colony_capital_ship",   unlock_wave = 3, weight = 4 },
-                { unit = "dlc3_herald_siege_capital_ship",    unlock_wave = 3, weight = 4 },
-                { unit = "dlc3_herald_support_capital_ship",  unlock_wave = 3, weight = 4 },
+                { unit = "dlc3_herald_battle_capital_ship",   unlock_time = 1800, weight = 12 },
+                { unit = "dlc3_herald_carrier_capital_ship",  unlock_time = 1800, weight = 8 },
+                { unit = "dlc3_herald_colony_capital_ship",   unlock_time = 1800, weight = 4 },
+                { unit = "dlc3_herald_siege_capital_ship",    unlock_time = 1800, weight = 4 },
+                { unit = "dlc3_herald_support_capital_ship",  unlock_time = 1800, weight = 4 },
 
                 -- Super capital ship
-                { unit = "dlc3_herald_super_capital_ship",    unlock_wave = 999, weight = 1 },
+                { unit = "dlc3_herald_super_capital_ship",    unlock_time = 899100, weight = 1 },
 
                 -- Titan
-                { unit = "dlc3_herald_titan",                 unlock_wave = 9, weight = 1 }
+                { unit = "dlc3_herald_titan",                 unlock_time = 7200, weight = 1 }
             }
         }
     }
@@ -401,13 +373,85 @@ local function is_wave_enabled_for_race(race)
     return faction ~= nil, faction
 end
 
-local function get_wave_definition(wave_number)
-    if #CONFIG.waves == 0 then
-        return nil, nil
+local function get_level_for_time(game_time)
+    if #CONFIG.level_timeline == 0 then
+        return 1
     end
 
-    local wave_index = math.min(wave_number, #CONFIG.waves)
-    return CONFIG.waves[wave_index], wave_index
+    local level = CONFIG.level_timeline[1].level or 1
+
+    for _, entry in ipairs(CONFIG.level_timeline) do
+        if game_time >= entry.time then
+            level = entry.level or level
+        else
+            break
+        end
+    end
+
+    return level
+end
+
+local function get_supply_for_time(game_time)
+    local start_supply = CONFIG.supply_start or 0
+    local end_supply = CONFIG.supply_end or start_supply
+    local end_time = CONFIG.supply_end_time or 0
+
+    if end_time <= 0 then
+        return end_supply
+    end
+
+    if game_time <= 0 then
+        return start_supply
+    end
+
+    if game_time >= end_time then
+        return end_supply
+    end
+
+    local progress = game_time / end_time
+    local interpolated = start_supply + ((end_supply - start_supply) * progress)
+
+    return math.floor(interpolated + 0.5)
+end
+
+local function get_balance_for_time(game_time)
+    return {
+        supply = get_supply_for_time(game_time),
+        level = get_level_for_time(game_time)
+    }
+end
+
+local function elite_event_state_key(event_index)
+    return "elite_event_fired_" .. tostring(event_index)
+end
+
+local function get_pending_elite_events(context, game_time)
+    local pending = {}
+
+    for event_index, elite_event in ipairs(CONFIG.elite_events or {}) do
+        if game_time >= elite_event.time
+            and not context.instance[elite_event_state_key(event_index)]
+        then
+            pending[#pending + 1] = {
+                index = event_index,
+                elite = elite_event.elite
+            }
+        end
+    end
+
+    return pending
+end
+
+local function has_pending_elite_for_time(context, game_time)
+    for event_index, elite_event in ipairs(CONFIG.elite_events or {}) do
+        if game_time >= elite_event.time
+            and not context.instance[elite_event_state_key(event_index)]
+        then
+            return true
+        end
+    end
+
+    return false
 end
 
 local function get_ship_supply_cost(context, unit_type)
@@ -669,14 +713,14 @@ local function spawn_one_ship(context, player_index, spawn_well_id, target_well_
     return unit
 end
 
-local function build_eligible_weight_pool(context, faction, wave_number, remaining_supply)
+local function build_eligible_weight_pool(context, faction, game_time, remaining_supply)
     local pool = {}
 
     for _, candidate in ipairs(faction.possible_ships or {}) do
-        local unlock_wave = candidate.unlock_wave or 1
+        local unlock_time = candidate.unlock_time or 0
         local weight = math.max(0, math.floor(candidate.weight or 0))
 
-        if wave_number >= unlock_wave and weight > 0 then
+        if game_time >= unlock_time and weight > 0 then
             local unit_type = candidate.unit
             local supply_cost = get_ship_supply_cost(context, unit_type)
 
@@ -705,22 +749,15 @@ end
 local function spawn_elite_ships(
     context,
     race,
-    wave,
-    wave_number,
-    wave_index,
+    elite_id,
+    balance,
     player_index,
     spawn_well_id,
     target_well_id
 )
-    -- Elite additions only fire on the exact configured wave.
-    -- If the final normal wave repeats indefinitely, its elite reference does not repeat.
-    if wave_number ~= wave_index or wave.elite == nil then
-        return 0, {}
-    end
-
-    local elite_definition = CONFIG.elite_waves[wave.elite]
+    local elite_definition = CONFIG.elite_waves[elite_id]
     if elite_definition == nil then
-        error("wave references missing elite definition " .. tostring(wave.elite))
+        error("missing elite definition " .. tostring(elite_id))
     end
 
     local elite_list = elite_definition[tostring(race)]
@@ -748,7 +785,7 @@ local function spawn_elite_ships(
                 spawn_well_id,
                 target_well_id,
                 unit_type,
-                wave,
+                balance,
                 resolved_elite_ship
             )
 
@@ -766,12 +803,13 @@ end
 
 local function update_hud(context)
     local now = context.simulation.current_time
-    local remaining = math.max(0, (context.instance.next_wave_time or now) - now)
+    local next_wave_time = context.instance.next_wave_time or now
+    local remaining = math.max(0, next_wave_time - now)
     local seconds = math.ceil(remaining)
     local next_wave_number = (context.instance.wave_number or 0) + 1
-    local next_wave = get_wave_definition(next_wave_number)
-    local next_supply = next_wave ~= nil and next_wave.supply or 0
-    local next_level = next_wave ~= nil and (next_wave.level or 1) or 1
+    local next_balance = get_balance_for_time(next_wave_time)
+    local next_supply = next_balance.supply or 0
+    local next_level = next_balance.level or 1
 
     if CONFIG.debug_hud then
         context.simulation:display_text("timer_label", "Next Incursion Wave")
@@ -814,7 +852,7 @@ local function update_hud(context)
 
     context.simulation:display_text("timer_value", timer_text)
 
-    if next_wave ~= nil and next_wave.elite ~= nil and next_wave_number <= #CONFIG.waves then
+    if has_pending_elite_for_time(context, next_wave_time) then
         context.simulation:display_text("progress_label", "Elite")
     else
         context.simulation:display_text("progress_label", "")
@@ -827,13 +865,9 @@ function Pirate_incursion_wave_spawn_callback(context)
     context.instance.wave_number = (context.instance.wave_number or 0) + 1
 
     local wave_number = context.instance.wave_number
-    local wave, wave_index = get_wave_definition(wave_number)
-    context.instance.next_wave_time = context.simulation.current_time + CONFIG.wave_interval_seconds
-
-    if wave == nil then
-        set_status(context, "no wave configuration")
-        return
-    end
+    local game_time = context.simulation.current_time
+    local balance = get_balance_for_time(game_time)
+    context.instance.next_wave_time = game_time + CONFIG.wave_interval_seconds
 
     local success, error_message = pcall(function()
         local playable_indices = get_living_playable_player_indices(context)
@@ -852,55 +886,51 @@ function Pirate_incursion_wave_spawn_callback(context)
                         local _, target_well_id = ensure_target_for_player(context, player_index, spawn_well)
 
                         if target_well_id ~= nil then
-                            local supply_budget = wave.supply or 0
+                            local supply_budget = balance.supply or 0
                             local supply_used = 0
                             local spawned_count = 0
                             local composition = {}
 
-                            -- Mandatory faction ships consume budget first.
+                            -- Mandatory faction ships consume budget first and always spawn.
                             for _, mandatory in ipairs(faction.mandatory_ships or {}) do
-                                local unlock_wave = mandatory.unlock_wave or 1
+                                local unit_type = mandatory.unit
+                                local supply_cost = get_ship_supply_cost(context, unit_type)
+                                local count = mandatory.count or 1
 
-                                if wave_number >= unlock_wave then
-                                    local unit_type = mandatory.unit
-                                    local supply_cost = get_ship_supply_cost(context, unit_type)
-                                    local count = mandatory.count or 1
+                                if unit_type == nil then
+                                    error("mandatory ship entry is missing unit for " .. tostring(faction.name))
+                                end
 
-                                    if unit_type == nil then
-                                        error("mandatory ship entry is missing unit for " .. tostring(faction.name))
-                                    end
+                                if supply_cost == nil then
+                                    error("could not read supply cost for " .. tostring(unit_type))
+                                end
 
-                                    if supply_cost == nil then
-                                        error("could not read supply cost for " .. tostring(unit_type))
-                                    end
-
-                                    for _ = 1, count do
-                                        if supply_used + supply_cost > supply_budget then
-                                            error(
-                                                "mandatory ships exceed wave budget: "
-                                                .. tostring(supply_used + supply_cost)
-                                                .. " > " .. tostring(supply_budget)
-                                            )
-                                        end
-
-                                        local unit = spawn_one_ship(
-                                            context,
-                                            player_index,
-                                            spawn_well.id,
-                                            target_well_id,
-                                            unit_type,
-                                            wave,
-                                            mandatory
+                                for _ = 1, count do
+                                    if supply_used + supply_cost > supply_budget then
+                                        error(
+                                            "mandatory ships exceed wave budget: "
+                                            .. tostring(supply_used + supply_cost)
+                                            .. " > " .. tostring(supply_budget)
                                         )
-
-                                        if unit == nil then
-                                            error("failed to spawn mandatory ship " .. tostring(unit_type))
-                                        end
-
-                                        supply_used = supply_used + supply_cost
-                                        spawned_count = spawned_count + 1
-                                        composition[unit_type] = (composition[unit_type] or 0) + 1
                                     end
+
+                                    local unit = spawn_one_ship(
+                                        context,
+                                        player_index,
+                                        spawn_well.id,
+                                        target_well_id,
+                                        unit_type,
+                                        balance,
+                                        mandatory
+                                    )
+
+                                    if unit == nil then
+                                        error("failed to spawn mandatory ship " .. tostring(unit_type))
+                                    end
+
+                                    supply_used = supply_used + supply_cost
+                                    spawned_count = spawned_count + 1
+                                    composition[unit_type] = (composition[unit_type] or 0) + 1
                                 end
                             end
 
@@ -915,7 +945,7 @@ function Pirate_incursion_wave_spawn_callback(context)
                                     weighted_pool = build_eligible_weight_pool(
                                         context,
                                         faction,
-                                        wave_number,
+                                        game_time,
                                         remaining_supply
                                     )
                                     pool_index = 1
@@ -935,7 +965,7 @@ function Pirate_incursion_wave_spawn_callback(context)
                                         spawn_well.id,
                                         target_well_id,
                                         choice.unit_type,
-                                        wave,
+                                        balance,
                                         choice.spec
                                     )
 
@@ -953,21 +983,28 @@ function Pirate_incursion_wave_spawn_callback(context)
                             end
 
                             -- Elite ships are additional to the normal wave supply budget.
-                            local elite_spawned_count, elite_composition = spawn_elite_ships(
-                                context,
-                                player.race,
-                                wave,
-                                wave_number,
-                                wave_index,
-                                player_index,
-                                spawn_well.id,
-                                target_well_id
-                            )
+                            local elite_labels = {}
+                            local pending_elites = get_pending_elite_events(context, game_time)
 
-                            spawned_count = spawned_count + elite_spawned_count
+                            for _, pending_elite in ipairs(pending_elites) do
+                                local elite_spawned_count, elite_composition = spawn_elite_ships(
+                                    context,
+                                    player.race,
+                                    pending_elite.elite,
+                                    balance,
+                                    player_index,
+                                    spawn_well.id,
+                                    target_well_id
+                                )
 
-                            for unit_type, count in pairs(elite_composition) do
-                                composition[unit_type] = (composition[unit_type] or 0) + count
+                                spawned_count = spawned_count + elite_spawned_count
+
+                                for unit_type, count in pairs(elite_composition) do
+                                    composition[unit_type] = (composition[unit_type] or 0) + count
+                                end
+
+                                context.instance[elite_event_state_key(pending_elite.index)] = true
+                                elite_labels[#elite_labels + 1] = tostring(pending_elite.elite)
                             end
 
                             local composition_parts = {}
@@ -979,23 +1016,23 @@ function Pirate_incursion_wave_spawn_callback(context)
 
                             table.sort(composition_parts)
 
-                            local repeated_suffix = ""
-                            if wave_number > #CONFIG.waves then
-                                repeated_suffix = " (repeating wave " .. tostring(wave_index) .. ")"
+                            local elite_status = ""
+                            if #elite_labels > 0 then
+                                elite_status = " | ELITE " .. table.concat(elite_labels, ",")
                             end
 
                             set_status(
                                 context,
-                                "wave " .. tostring(wave_number) .. repeated_suffix
+                                "wave " .. tostring(wave_number)
+                                .. " | time " .. tostring(math.floor(game_time)) .. "s"
                                 .. " | " .. tostring(supply_used) .. "/" .. tostring(supply_budget) .. " supply"
+                                .. " | level " .. tostring(balance.level or 1)
                                 .. " | " .. tostring(spawned_count) .. " ships"
-                                .. ((wave.elite ~= nil and wave_number == wave_index) and (" | ELITE " .. tostring(wave.elite)) or "")
+                                .. elite_status
                                 .. " | " .. table.concat(composition_parts, ", ")
                             )
 
                             spawned_wave = true
-
-                            -- Exactly one incursion wave per timer tick.
                             break
                         end
                     end
@@ -1151,7 +1188,7 @@ function Pirate_incursion_on_start(context)
 
     context.instance.ready_to_trigger = false
     context.instance.wave_number = 0
-    context.instance.status_text = "waiting for wave 1 (75 supply)"
+    context.instance.status_text = "waiting for wave 1"
     context.instance.next_wave_time = context.simulation.current_time + CONFIG.wave_interval_seconds
 
     context.timers.register({
