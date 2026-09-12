@@ -3,5 +3,19 @@
         "trader_rebel",
         "advent_rebel",
         "vasari_rebel"
+    ],
+    "pickable_players": [
+        "trader_incursion",
+        "advent_incursion",
+        "vasari_incursion"
+    ],
+    "dlc_pickable_players": [
+        {
+            "product_id": "dlc_Herald",
+            "players": [
+                "dlc3_herald",
+                "dlc3_herald_incursion"
+            ]
+        }
     ]
 }
