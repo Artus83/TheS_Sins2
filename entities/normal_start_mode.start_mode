@@ -1,8 +1,8 @@
 {
     "version": 0,
-    "name": "thes",
-    "display_name": "start_mode.thes.name",
-    "description": "start_mode.thes.description",
+    "name": "normal",
+    "display_name": "start_mode.normal.name",
+    "description": "start_mode.normal.description",
     "faction_configurations": [
         {
             "player_definition_id": "trader_loyalist",
@@ -12,17 +12,7 @@
                 "crystal": 850.0
             },
             "home_planet": {
-                "starting_units_in_gravity_well": {
-                    "required_units": [
-                        {
-                            "unit": "trader_starbase",
-                            "count": [
-                                1,
-                                1
-                            ]
-                        }
-                    ]
-                },
+                "starting_units_in_gravity_well": {},
                 "starting_units_in_formations": [
                     {
                         "required_units": [
@@ -78,9 +68,7 @@
                 ]
             },
             "starting_research": {
-                "starting_research_subjects": [
-                    "passive_experience"
-                ]
+                "starting_research_subjects": []
             },
             "starting_player_inventory_items": [],
             "additional_starting_planets": {
@@ -99,17 +87,7 @@
                 "crystal": 850.0
             },
             "home_planet": {
-                "starting_units_in_gravity_well": {
-                    "required_units": [
-                        {
-                            "unit": "trader_starbase",
-                            "count": [
-                                1,
-                                1
-                            ]
-                        }
-                    ]
-                },
+                "starting_units_in_gravity_well": {},
                 "starting_units_in_formations": [
                     {
                         "required_units": [
@@ -165,9 +143,7 @@
                 ]
             },
             "starting_research": {
-                "starting_research_subjects": [
-                    "passive_experience"
-                ]
+                "starting_research_subjects": []
             },
             "starting_player_inventory_items": [],
             "additional_starting_planets": {
@@ -186,17 +162,7 @@
                 "crystal": 1750.0
             },
             "home_planet": {
-                "starting_units_in_gravity_well": {
-                    "required_units": [
-                        {
-                            "unit": "advent_starbase",
-                            "count": [
-                                1,
-                                1
-                            ]
-                        }
-                    ]
-                },
+                "starting_units_in_gravity_well": {},
                 "starting_units_in_formations": [
                     {
                         "required_units": [
@@ -245,9 +211,7 @@
                 ]
             },
             "starting_research": {
-                "starting_research_subjects": [
-                    "passive_experience"
-                ]
+                "starting_research_subjects": []
             },
             "starting_player_inventory_items": [],
             "additional_starting_planets": {
@@ -266,17 +230,7 @@
                 "crystal": 1750.0
             },
             "home_planet": {
-                "starting_units_in_gravity_well": {
-                    "required_units": [
-                        {
-                            "unit": "advent_starbase",
-                            "count": [
-                                1,
-                                1
-                            ]
-                        }
-                    ]
-                },
+                "starting_units_in_gravity_well": {},
                 "starting_units_in_formations": [
                     {
                         "required_units": [
@@ -325,9 +279,7 @@
                 ]
             },
             "starting_research": {
-                "starting_research_subjects": [
-                    "passive_experience"
-                ]
+                "starting_research_subjects": []
             },
             "starting_player_inventory_items": [],
             "additional_starting_planets": {
@@ -369,13 +321,6 @@
                 "starting_units_in_hyperspace": {
                     "required_units": [
                         {
-                            "unit": "vasari_starbase",
-                            "count": [
-                                1,
-                                1
-                            ]
-                        },
-                        {
                             "unit": "vasari_colony_capital_ship",
                             "options": {
                                 "is_temporary_ruler_ship": true,
@@ -410,9 +355,7 @@
                 ]
             },
             "starting_research": {
-                "starting_research_subjects": [
-                    "passive_experience"
-                ]
+                "starting_research_subjects": []
             },
             "starting_player_inventory_items": [],
             "additional_starting_planets": {
@@ -454,13 +397,6 @@
                 "starting_units_in_hyperspace": {
                     "required_units": [
                         {
-                            "unit": "vasari_starbase",
-                            "count": [
-                                1,
-                                1
-                            ]
-                        },
-                        {
                             "unit": "vasari_colony_capital_ship",
                             "options": {
                                 "is_temporary_ruler_ship": true,
@@ -495,9 +431,7 @@
                 ]
             },
             "starting_research": {
-                "starting_research_subjects": [
-                    "passive_experience"
-                ]
+                "starting_research_subjects": []
             },
             "starting_player_inventory_items": [],
             "additional_starting_planets": {
@@ -516,17 +450,7 @@
                 "crystal": 2000.0
             },
             "home_planet": {
-                "starting_units_in_gravity_well": {
-                    "required_units": [
-                        {
-                            "unit": "dlc3_herald_starbase",
-                            "count": [
-                                1,
-                                1
-                            ]
-                        }
-                    ]
-                },
+                "starting_units_in_gravity_well": {},
                 "starting_units_in_hyperspace": {},
                 "starting_units_in_portal": {
                     "required_units": [
@@ -586,9 +510,7 @@
                 }
             },
             "starting_research": {
-                "starting_research_subjects": [
-                    "passive_experience"
-                ]
+                "starting_research_subjects": []
             },
             "starting_player_inventory_items": [],
             "additional_starting_planets": {
@@ -607,17 +529,7 @@
                 "crystal": 850.0
             },
             "home_planet": {
-                "starting_units_in_gravity_well": {
-                    "required_units": [
-                        {
-                            "unit": "trader_starbase",
-                            "count": [
-                                1,
-                                1
-                            ]
-                        }
-                    ]
-                },
+                "starting_units_in_gravity_well": {},
                 "starting_units_in_formations": [
                     {
                         "required_units": [
@@ -673,9 +585,7 @@
                 ]
             },
             "starting_research": {
-                "starting_research_subjects": [
-                    "passive_experience"
-                ]
+                "starting_research_subjects": []
             },
             "starting_player_inventory_items": [],
             "additional_starting_planets": {
@@ -694,17 +604,7 @@
                 "crystal": 1750.0
             },
             "home_planet": {
-                "starting_units_in_gravity_well": {
-                    "required_units": [
-                        {
-                            "unit": "advent_starbase",
-                            "count": [
-                                1,
-                                1
-                            ]
-                        }
-                    ]
-                },
+                "starting_units_in_gravity_well": {},
                 "starting_units_in_formations": [
                     {
                         "required_units": [
@@ -753,9 +653,7 @@
                 ]
             },
             "starting_research": {
-                "starting_research_subjects": [
-                    "passive_experience"
-                ]
+                "starting_research_subjects": []
             },
             "starting_player_inventory_items": [],
             "additional_starting_planets": {
@@ -797,13 +695,6 @@
                 "starting_units_in_hyperspace": {
                     "required_units": [
                         {
-                            "unit": "vasari_starbase",
-                            "count": [
-                                1,
-                                1
-                            ]
-                        },
-                        {
                             "unit": "vasari_colony_capital_ship",
                             "options": {
                                 "is_temporary_ruler_ship": true,
@@ -838,9 +729,7 @@
                 ]
             },
             "starting_research": {
-                "starting_research_subjects": [
-                    "passive_experience"
-                ]
+                "starting_research_subjects": []
             },
             "starting_player_inventory_items": [],
             "additional_starting_planets": {
@@ -859,17 +748,7 @@
                 "crystal": 2000.0
             },
             "home_planet": {
-                "starting_units_in_gravity_well": {
-                    "required_units": [
-                        {
-                            "unit": "dlc3_herald_starbase",
-                            "count": [
-                                1,
-                                1
-                            ]
-                        }
-                    ]
-                },
+                "starting_units_in_gravity_well": {},
                 "starting_units_in_hyperspace": {},
                 "starting_units_in_portal": {
                     "required_units": [
@@ -929,9 +808,7 @@
                 }
             },
             "starting_research": {
-                "starting_research_subjects": [
-                    "passive_experience"
-                ]
+                "starting_research_subjects": []
             },
             "starting_player_inventory_items": [],
             "additional_starting_planets": {
