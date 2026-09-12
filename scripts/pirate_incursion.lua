@@ -35,7 +35,9 @@ function Get_event_metadata()
 end
 
 local CONFIG = {
-    wave_interval_seconds = 20.0,
+    debug_hud = false,
+
+    wave_interval_seconds = 900.0,
     hyperspace_arrival_delay_seconds = 10.0,
     wave_timer = "incursion_wave_spawn_timer",
     recent_unit_slots_per_player = 192,
@@ -771,20 +773,54 @@ local function update_hud(context)
     local next_supply = next_wave ~= nil and next_wave.supply or 0
     local next_level = next_wave ~= nil and (next_wave.level or 1) or 1
 
-    context.simulation:display_text("timer_label", "Next Incursion Wave")
-    context.simulation:display_text("timer_value", string.format("0:%02d", seconds))
-    context.simulation:display_text("progress_label", "Next Wave")
+    if CONFIG.debug_hud then
+        context.simulation:display_text("timer_label", "Next Incursion Wave")
 
-    local value =
-        "Wave " .. tostring(next_wave_number)
-        .. " | " .. tostring(next_supply) .. " supply"
-        .. " | level " .. tostring(next_level)
+        local timer_text
+        if seconds >= 60 then
+            local minutes = math.floor(seconds / 60)
+            local remaining_seconds = seconds % 60
+            timer_text = string.format("%d:%02d", minutes, remaining_seconds)
+        else
+            timer_text = tostring(seconds)
+        end
 
-    if context.instance.status_text ~= nil and context.instance.status_text ~= "" then
-        value = value .. " | " .. context.instance.status_text
+        context.simulation:display_text("timer_value", timer_text)
+        context.simulation:display_text("progress_label", "Next Wave")
+
+        local value =
+            "Wave " .. tostring(next_wave_number)
+            .. " | " .. tostring(next_supply) .. " supply"
+            .. " | level " .. tostring(next_level)
+
+        if context.instance.status_text ~= nil and context.instance.status_text ~= "" then
+            value = value .. " | " .. context.instance.status_text
+        end
+
+        context.simulation:display_text("progress_value", value)
+        return
     end
 
-    context.simulation:display_text("progress_value", value)
+    context.simulation:display_text("timer_label", "Incursion")
+
+    local timer_text
+    if seconds >= 60 then
+        local minutes = math.floor(seconds / 60)
+        local remaining_seconds = seconds % 60
+        timer_text = string.format("%d:%02d", minutes, remaining_seconds)
+    else
+        timer_text = tostring(seconds)
+    end
+
+    context.simulation:display_text("timer_value", timer_text)
+
+    if next_wave ~= nil and next_wave.elite ~= nil and next_wave_number <= #CONFIG.waves then
+        context.simulation:display_text("progress_label", "Elite")
+    else
+        context.simulation:display_text("progress_label", "")
+    end
+
+    context.simulation:display_text("progress_value", "")
 end
 
 function Pirate_incursion_wave_spawn_callback(context)
