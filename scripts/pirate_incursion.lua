@@ -1,6 +1,6 @@
--- Selective Faction Battle Capital Wave Test
--- Loaded by overriding the existing pirate_incursion.lua resource.
--- Uses the confirmed-working pirate_incursion event identity.
+-- Incursion Wave System
+-- Supply-budgeted mandatory and weighted ship composition.
+-- The last configured wave repeats indefinitely.
 
 local EventMetadata = require("event_metadata")
 
@@ -25,7 +25,7 @@ function Get_event_metadata()
     metadata.on_update_function_initial_delay = 0.0
 
     metadata.event_version = 1.0
-    metadata.description = "Selective faction battle capital wave test"
+    metadata.description = "Supply-budgeted incursion wave system"
     metadata.author = "TheS"
     metadata.priority = 50.0
     metadata.incompatible_event_ids = {"test_event_v1"}
@@ -37,21 +37,75 @@ end
 local CONFIG = {
     wave_interval_seconds = 20.0,
     hyperspace_arrival_delay_seconds = 10.0,
-    max_level = 10,
-    wave_timer = "tec_kol_wave_spawn_timer",
-    recent_unit_slots_per_player = 48,
-
-    -- Only the four Incursion player resources spawn waves.
-    incursion_player_ids = {
-        trader_incursion = true,
-        advent_incursion = true,
-        vasari_incursion = true,
-        dlc3_herald_incursion = true
-    },
+    wave_timer = "incursion_wave_spawn_timer",
+    recent_unit_slots_per_player = 96,
 
     -- Spawned wave units are uncontrollable and do not consume normal fleet supply.
-    -- Do not classify them as trade ships, because that can invoke trade-ship escort behavior.
-    special_operation_kind = "trade_escort"
+    special_operation_kind = "trade_escort",
+
+    -- Runtime player.race -> faction ship-role mapping.
+    factions = {
+        trader_incursion = {
+            name = "tec",
+            ships = {
+                colony_capital_ship = "trader_colony_capital_ship",
+                carrier_cruiser = "trader_carrier_cruiser",
+                heavy_cruiser = "trader_heavy_cruiser"
+            }
+        },
+        advent_incursion = {
+            name = "advent",
+            ships = {
+                colony_capital_ship = "advent_colony_capital_ship",
+                carrier_cruiser = "advent_carrier_cruiser",
+                heavy_cruiser = "advent_heavy_cruiser"
+            }
+        },
+        vasari_incursion = {
+            name = "vasari",
+            ships = {
+                colony_capital_ship = "vasari_colony_capital_ship",
+                carrier_cruiser = "vasari_carrier_cruiser",
+                heavy_cruiser = "vasari_heavy_cruiser"
+            }
+        },
+        dlc3_herald_incursion = {
+            name = "eidolon",
+            ships = {
+                colony_capital_ship = "dlc3_herald_colony_capital_ship",
+                carrier_cruiser = "dlc3_herald_carrier_cruiser"
+                -- No dlc3_herald_heavy_cruiser exists in current game data.
+            }
+        }
+    },
+
+    -- Hard supply budget per wave. The last configured wave repeats indefinitely.
+    waves = {
+        {
+            supply = 75,
+            mandatory = {
+                { role = "colony_capital_ship", count = 1 }
+            }
+        },
+        {
+            supply = 150,
+            mandatory = {
+                { role = "colony_capital_ship", count = 1 }
+            }
+        },
+        {
+            supply = 300,
+            mandatory = {
+                { role = "colony_capital_ship", count = 1 }
+            }
+        }
+    },
+
+    -- Candidate weights are relative. Equal weights produce roughly equal ship counts.
+    possible_ships = {
+        { role = "carrier_cruiser", unlock_wave = 1, weight = 1 },
+        { role = "heavy_cruiser", unlock_wave = 3, weight = 1 }
+    }
 }
 
 local function debug_print(message)
@@ -71,46 +125,63 @@ local function recent_unit_key(player_index, slot)
     return "recent_unit_" .. tostring(player_index) .. "_" .. tostring(slot)
 end
 
--- Runtime player.race is the player-definition resource ID.
-local function get_wave_faction_and_unit_type(race)
+local function get_faction_definition(race)
     if race == nil then
-        return nil, nil
+        return nil
     end
 
-    race = tostring(race)
-
-    if race == "trader_incursion" then
-        return "tec", "trader_battle_capital_ship"
-    end
-
-    if race == "advent_incursion" then
-        return "advent", "advent_battle_capital_ship"
-    end
-
-    if race == "vasari_incursion" then
-        return "vasari", "vasari_battle_capital_ship"
-    end
-
-    if race == "dlc3_herald_incursion" then
-        return "eidolon", "dlc3_herald_battle_capital_ship"
-    end
-
-    return nil, nil
+    return CONFIG.factions[tostring(race)]
 end
 
 local function is_wave_enabled_for_race(race)
-    if race == nil then
-        return false, nil, nil
+    local faction = get_faction_definition(race)
+    return faction ~= nil, faction
+end
+
+local function get_wave_definition(wave_number)
+    if #CONFIG.waves == 0 then
+        return nil, nil
     end
 
-    race = tostring(race)
+    local wave_index = math.min(wave_number, #CONFIG.waves)
+    return CONFIG.waves[wave_index], wave_index
+end
 
-    if CONFIG.incursion_player_ids[race] ~= true then
-        return false, nil, nil
+local function get_ship_type(faction, role)
+    if faction == nil or faction.ships == nil or role == nil then
+        return nil
     end
 
-    local faction, unit_type = get_wave_faction_and_unit_type(race)
-    return faction ~= nil and unit_type ~= nil, faction, unit_type
+    return faction.ships[role]
+end
+
+local function get_ship_supply_cost(context, unit_type)
+    if unit_type == nil then
+        return nil
+    end
+
+    local cost = context.simulation:get_unit_supply_cost(unit_type)
+    if cost == nil or cost <= 0 then
+        return nil
+    end
+
+    return cost
+end
+
+local function make_spawn_options(ship_spec)
+    local options = spawn_unit_options.new()
+
+    if ship_spec.level ~= nil then
+        options.level = math.max(0, ship_spec.level - 1)
+    end
+
+    if ship_spec.items ~= nil then
+        for _, item_name in ipairs(ship_spec.items) do
+            options:add_item(item_name)
+        end
+    end
+
+    return options
 end
 
 local function get_living_playable_player_indices(context)
@@ -277,17 +348,85 @@ local function retarget_recent_units(context, player_index, target_well_id)
     end
 end
 
+local function spawn_one_ship(context, player_index, spawn_well_id, target_well_id, unit_type, ship_spec)
+    local spawn_def = spawn_units_definition.new()
+    spawn_def:add_required_units(unit_type, 1, make_spawn_options(ship_spec))
+
+    local spawned_units = context.simulation:create_units_by_id(
+        spawn_def,
+        nil,
+        spawn_well_id,
+        player_index,
+        float3.new(0.0, 0.0, 0.0),
+        true,
+        CONFIG.hyperspace_arrival_delay_seconds,
+        nil,
+        CONFIG.special_operation_kind
+    )
+
+    if spawned_units == nil or #spawned_units == 0 then
+        return nil
+    end
+
+    local unit = spawned_units[1]
+
+    -- One composition entry is exactly one ship.
+    for extra_index = 2, #spawned_units do
+        context.simulation:despawn_unit_by_id(spawned_units[extra_index].id)
+    end
+
+    store_recent_unit(context, player_index, unit.id)
+    order_unit_to_target(context, unit.id, target_well_id)
+
+    return unit
+end
+
+local function build_eligible_weight_pool(context, faction, wave_number, remaining_supply)
+    local pool = {}
+
+    for _, candidate in ipairs(CONFIG.possible_ships) do
+        if wave_number >= (candidate.unlock_wave or 1) then
+            local unit_type = get_ship_type(faction, candidate.role)
+            local supply_cost = get_ship_supply_cost(context, unit_type)
+
+            if unit_type ~= nil and supply_cost ~= nil and supply_cost <= remaining_supply then
+                local weight = math.max(1, math.floor(candidate.weight or 1))
+
+                for _ = 1, weight do
+                    pool[#pool + 1] = {
+                        spec = candidate,
+                        unit_type = unit_type,
+                        supply_cost = supply_cost
+                    }
+                end
+            end
+        end
+    end
+
+    -- Deterministic shuffle. A weight-cycle keeps equal weights relatively even per wave.
+    for i = #pool, 2, -1 do
+        local j = context.random_integer(1, i)
+        pool[i], pool[j] = pool[j], pool[i]
+    end
+
+    return pool
+end
+
 local function update_hud(context)
     local now = context.simulation.current_time
     local remaining = math.max(0, (context.instance.next_wave_time or now) - now)
     local seconds = math.ceil(remaining)
-    local next_level = math.min((context.instance.wave_number or 0) + 1, CONFIG.max_level)
+    local next_wave_number = (context.instance.wave_number or 0) + 1
+    local next_wave = get_wave_definition(next_wave_number)
+    local next_supply = next_wave ~= nil and next_wave.supply or 0
 
-    context.simulation:display_text("timer_label", "Next Enabled Faction Wave")
+    context.simulation:display_text("timer_label", "Next Incursion Wave")
     context.simulation:display_text("timer_value", string.format("0:%02d", seconds))
-    context.simulation:display_text("progress_label", "Next Spawn")
+    context.simulation:display_text("progress_label", "Next Wave")
 
-    local value = "Battle Capital Ships - Level " .. tostring(next_level)
+    local value =
+        "Wave " .. tostring(next_wave_number)
+        .. " | " .. tostring(next_supply) .. " supply"
 
     if context.instance.status_text ~= nil and context.instance.status_text ~= "" then
         value = value .. " | " .. context.instance.status_text
@@ -299,98 +438,164 @@ end
 function Pirate_incursion_wave_spawn_callback(context)
     context.instance.wave_number = (context.instance.wave_number or 0) + 1
 
-    -- Desired capital-ship level is wave 1 -> level 1 through wave 10 -> level 10.
-    -- Waves 11+ repeat the level-10 wave indefinitely.
-    local desired_level = math.min(context.instance.wave_number, CONFIG.max_level)
+    local wave_number = context.instance.wave_number
+    local wave, wave_index = get_wave_definition(wave_number)
     context.instance.next_wave_time = context.simulation.current_time + CONFIG.wave_interval_seconds
+
+    if wave == nil then
+        set_status(context, "no wave configuration")
+        return
+    end
 
     local success, error_message = pcall(function()
         local playable_indices = get_living_playable_player_indices(context)
-        local supported_players = 0
-        local spawned_count = 0
-        local ordered_count = 0
-        local skipped_races = 0
+        local spawned_wave = false
 
         for _, player_index in ipairs(playable_indices) do
             local player = context.simulation:get_player_by_player_index(player_index)
 
             if player ~= nil then
-                local enabled, faction, unit_type = is_wave_enabled_for_race(player.race)
+                local enabled, faction = is_wave_enabled_for_race(player.race)
 
-                if enabled and unit_type ~= nil then
-                    supported_players = supported_players + 1
-
+                if enabled and faction ~= nil then
                     local spawn_well = get_home_gravity_well(context, player_index)
+
                     if spawn_well ~= nil then
                         local _, target_well_id = ensure_target_for_player(context, player_index, spawn_well)
 
                         if target_well_id ~= nil then
-                            local spawn_options = spawn_unit_options.new()
+                            local supply_budget = wave.supply or 0
+                            local supply_used = 0
+                            local spawned_count = 0
+                            local composition = {}
 
-                            -- Capital ships naturally begin at level 1.
-                            -- spawn_options.level represents added levels:
-                            -- desired 1..10 therefore maps to 0..9.
-                            spawn_options.level = math.max(0, desired_level - 1)
+                            -- Mandatory ships consume budget first.
+                            for _, mandatory in ipairs(wave.mandatory or {}) do
+                                local unit_type = get_ship_type(faction, mandatory.role)
+                                local supply_cost = get_ship_supply_cost(context, unit_type)
+                                local count = mandatory.count or 1
 
-                            local spawn_def = spawn_units_definition.new()
-                            spawn_def:add_required_units(unit_type, 1, spawn_options)
+                                if unit_type == nil then
+                                    error(
+                                        "mandatory role '" .. tostring(mandatory.role)
+                                        .. "' has no unit mapping for " .. tostring(faction.name)
+                                    )
+                                end
 
-                            local spawned_units = context.simulation:create_units_by_id(
-                                spawn_def,
-                                nil,
-                                spawn_well.id,
-                                player_index,
-                                float3.new(0.0, 0.0, 0.0),
-                                true,
-                                CONFIG.hyperspace_arrival_delay_seconds,
-                                nil,
-                                CONFIG.special_operation_kind
+                                if supply_cost == nil then
+                                    error("could not read supply cost for " .. tostring(unit_type))
+                                end
+
+                                for _ = 1, count do
+                                    if supply_used + supply_cost > supply_budget then
+                                        error(
+                                            "mandatory ships exceed wave budget: "
+                                            .. tostring(supply_used + supply_cost)
+                                            .. " > " .. tostring(supply_budget)
+                                        )
+                                    end
+
+                                    local unit = spawn_one_ship(
+                                        context,
+                                        player_index,
+                                        spawn_well.id,
+                                        target_well_id,
+                                        unit_type,
+                                        mandatory
+                                    )
+
+                                    if unit == nil then
+                                        error("failed to spawn mandatory ship " .. tostring(unit_type))
+                                    end
+
+                                    supply_used = supply_used + supply_cost
+                                    spawned_count = spawned_count + 1
+                                    composition[unit_type] = (composition[unit_type] or 0) + 1
+                                end
+                            end
+
+                            -- Fill remaining budget from the weighted candidate list.
+                            local weighted_pool = {}
+                            local pool_index = 1
+
+                            while supply_used < supply_budget do
+                                local remaining_supply = supply_budget - supply_used
+
+                                if pool_index > #weighted_pool then
+                                    weighted_pool = build_eligible_weight_pool(
+                                        context,
+                                        faction,
+                                        wave_number,
+                                        remaining_supply
+                                    )
+                                    pool_index = 1
+                                end
+
+                                if #weighted_pool == 0 then
+                                    break
+                                end
+
+                                local choice = weighted_pool[pool_index]
+                                pool_index = pool_index + 1
+
+                                if choice.supply_cost <= (supply_budget - supply_used) then
+                                    local unit = spawn_one_ship(
+                                        context,
+                                        player_index,
+                                        spawn_well.id,
+                                        target_well_id,
+                                        choice.unit_type,
+                                        choice.spec
+                                    )
+
+                                    if unit == nil then
+                                        error("failed to spawn weighted ship " .. tostring(choice.unit_type))
+                                    end
+
+                                    supply_used = supply_used + choice.supply_cost
+                                    spawned_count = spawned_count + 1
+                                    composition[choice.unit_type] = (composition[choice.unit_type] or 0) + 1
+                                else
+                                    weighted_pool = {}
+                                    pool_index = 1
+                                end
+                            end
+
+                            local composition_parts = {}
+
+                            for unit_type, count in pairs(composition) do
+                                composition_parts[#composition_parts + 1] =
+                                    tostring(unit_type) .. " x" .. tostring(count)
+                            end
+
+                            table.sort(composition_parts)
+
+                            local repeated_suffix = ""
+                            if wave_number > #CONFIG.waves then
+                                repeated_suffix = " (repeating wave " .. tostring(wave_index) .. ")"
+                            end
+
+                            set_status(
+                                context,
+                                "wave " .. tostring(wave_number) .. repeated_suffix
+                                .. " | " .. tostring(supply_used) .. "/" .. tostring(supply_budget) .. " supply"
+                                .. " | " .. tostring(spawned_count) .. " ships"
+                                .. " | " .. table.concat(composition_parts, ", ")
                             )
 
-                            if spawned_units ~= nil and #spawned_units > 0 then
-                                -- This test intentionally spawns exactly one ship per wave globally.
-                                -- Keep the first returned unit and remove any unexpected extras.
-                                local unit = spawned_units[1]
-                                spawned_count = 1
-                                store_recent_unit(context, player_index, unit.id)
+                            spawned_wave = true
 
-                                if order_unit_to_target(context, unit.id, target_well_id) then
-                                    ordered_count = 1
-                                end
-
-                                for extra_index = 2, #spawned_units do
-                                    context.simulation:despawn_unit_by_id(spawned_units[extra_index].id)
-                                end
-
-                                -- One successful incursion-player spawn is the complete test wave.
-                                break
-                            end
+                            -- Exactly one incursion wave per timer tick.
+                            break
                         end
                     end
-                elseif unit_type == nil then
-                    skipped_races = skipped_races + 1
-                    debug_print("unsupported runtime race: " .. tostring(player.race))
-                else
-                    debug_print(
-                        "wave disabled for faction "
-                        .. tostring(faction)
-                        .. " (runtime race "
-                        .. tostring(player.race)
-                        .. ")"
-                    )
                 end
             end
         end
 
-        set_status(
-            context,
-            "wave " .. tostring(context.instance.wave_number)
-            .. " level " .. tostring(desired_level)
-            .. " players " .. tostring(supported_players)
-            .. ", spawned " .. tostring(spawned_count)
-            .. ", ordered " .. tostring(ordered_count)
-            .. (skipped_races > 0 and (", unsupported " .. tostring(skipped_races)) or "")
-        )
+        if not spawned_wave then
+            set_status(context, "no valid incursion player/target")
+        end
     end)
 
     if not success then
@@ -536,7 +741,7 @@ function Pirate_incursion_on_start(context)
 
     context.instance.ready_to_trigger = false
     context.instance.wave_number = 0
-    context.instance.status_text = "waiting for wave 1"
+    context.instance.status_text = "waiting for wave 1 (75 supply)"
     context.instance.next_wave_time = context.simulation.current_time + CONFIG.wave_interval_seconds
 
     context.timers.register({
