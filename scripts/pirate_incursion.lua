@@ -59,7 +59,89 @@ local CONFIG = {
         {
             supply = 300,
             level = 2
+        },
+        {
+            supply = 500,
+            level = 2,
+            elite = 1
         }
+    },
+
+    -- Ship artifacts available for boss/special ship definitions.
+    ship_artifacts = {
+        "exoforce_matrix_ship_artifact",
+        "kinetic_intensifier_ship_artifact",
+        "mass_negation_core_ship_artifact",
+        "power_core_relic_ship_artifact",
+        "resilient_metaloids_ship_artifact",
+        "weapon_symbiote_ship_artifact"
+    },
+
+    -- Reusable elite-wave definitions.
+    -- A normal wave references one with elite = 1, elite = 2, etc.
+    -- A wave without an elite field has no elite additions.
+    elite_waves = {
+        [1] = {
+            trader_incursion = {
+                {
+                    unit = "dlc2_trader_loyalist_super_capital_ship",
+                    count = 1,
+                    items = {
+                        "exoforce_matrix_ship_artifact"
+                    }
+                },
+                {
+                    unit = "trader_battle_capital_ship",
+                    count = 2
+                }
+            },
+
+            advent_incursion = {
+                {
+                    unit = "dlc2_advent_loyalist_super_capital_ship",
+                    count = 1,
+                    items = {
+                        "exoforce_matrix_ship_artifact"
+                    }
+                },
+                {
+                    unit = "advent_battle_capital_ship",
+                    count = 2
+                }
+            },
+
+            vasari_incursion = {
+                {
+                    unit = "dlc2_vasari_loyalist_super_capital_ship",
+                    count = 1,
+                    items = {
+                        "exoforce_matrix_ship_artifact"
+                    }
+                },
+                {
+                    unit = "vasari_battle_capital_ship",
+                    count = 2
+                }
+            },
+
+            dlc3_herald_incursion = {
+                {
+                    unit = "dlc3_herald_super_capital_ship",
+                    count = 1,
+                    items = {
+                        "exoforce_matrix_ship_artifact"
+                    }
+                },
+                {
+                    unit = "dlc3_herald_battle_capital_ship",
+                    count = 2
+                }
+            }
+        }
+
+        -- Add future elite definitions as:
+        -- [2] = { ... },
+        -- [3] = { ... }
     },
 
     -- Faction-specific wave composition.
@@ -540,6 +622,66 @@ local function build_eligible_weight_pool(context, faction, wave_number, remaini
     return pool
 end
 
+local function spawn_elite_ships(
+    context,
+    race,
+    wave,
+    wave_number,
+    wave_index,
+    player_index,
+    spawn_well_id,
+    target_well_id
+)
+    -- Elite additions only fire on the exact configured wave.
+    -- If the final normal wave repeats indefinitely, its elite reference does not repeat.
+    if wave_number ~= wave_index or wave.elite == nil then
+        return 0, {}
+    end
+
+    local elite_definition = CONFIG.elite_waves[wave.elite]
+    if elite_definition == nil then
+        error("wave references missing elite definition " .. tostring(wave.elite))
+    end
+
+    local elite_list = elite_definition[tostring(race)]
+    if elite_list == nil then
+        return 0, {}
+    end
+
+    local spawned_count = 0
+    local composition = {}
+
+    for _, elite_ship in ipairs(elite_list) do
+        local unit_type = elite_ship.unit
+        local count = elite_ship.count or 1
+
+        if unit_type == nil then
+            error("elite ship entry is missing unit for race " .. tostring(race))
+        end
+
+        for _ = 1, count do
+            local unit = spawn_one_ship(
+                context,
+                player_index,
+                spawn_well_id,
+                target_well_id,
+                unit_type,
+                wave,
+                elite_ship
+            )
+
+            if unit == nil then
+                error("failed to spawn elite ship " .. tostring(unit_type))
+            end
+
+            spawned_count = spawned_count + 1
+            composition[unit_type] = (composition[unit_type] or 0) + 1
+        end
+    end
+
+    return spawned_count, composition
+end
+
 local function update_hud(context)
     local now = context.simulation.current_time
     local remaining = math.max(0, (context.instance.next_wave_time or now) - now)
@@ -694,6 +836,24 @@ function Pirate_incursion_wave_spawn_callback(context)
                                 end
                             end
 
+                            -- Elite ships are additional to the normal wave supply budget.
+                            local elite_spawned_count, elite_composition = spawn_elite_ships(
+                                context,
+                                player.race,
+                                wave,
+                                wave_number,
+                                wave_index,
+                                player_index,
+                                spawn_well.id,
+                                target_well_id
+                            )
+
+                            spawned_count = spawned_count + elite_spawned_count
+
+                            for unit_type, count in pairs(elite_composition) do
+                                composition[unit_type] = (composition[unit_type] or 0) + count
+                            end
+
                             local composition_parts = {}
 
                             for unit_type, count in pairs(composition) do
@@ -713,6 +873,7 @@ function Pirate_incursion_wave_spawn_callback(context)
                                 "wave " .. tostring(wave_number) .. repeated_suffix
                                 .. " | " .. tostring(supply_used) .. "/" .. tostring(supply_budget) .. " supply"
                                 .. " | " .. tostring(spawned_count) .. " ships"
+                                .. ((wave.elite ~= nil and wave_number == wave_index) and (" | ELITE " .. tostring(wave.elite)) or "")
                                 .. " | " .. table.concat(composition_parts, ", ")
                             )
 
