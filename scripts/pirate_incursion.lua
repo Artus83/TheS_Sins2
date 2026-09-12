@@ -107,9 +107,7 @@ local CONFIG = {
                 {
                     unit = "dlc2_trader_loyalist_super_capital_ship",
                     count = 1,
-                    items = {
-                        "exoforce_matrix_ship_artifact"
-                    }
+                    random_ship_artifact = true
                 },
                 {
                     unit = "trader_battle_capital_ship",
@@ -121,9 +119,7 @@ local CONFIG = {
                 {
                     unit = "dlc2_advent_loyalist_super_capital_ship",
                     count = 1,
-                    items = {
-                        "exoforce_matrix_ship_artifact"
-                    }
+                    random_ship_artifact = true
                 },
                 {
                     unit = "advent_battle_capital_ship",
@@ -135,9 +131,7 @@ local CONFIG = {
                 {
                     unit = "dlc2_vasari_loyalist_super_capital_ship",
                     count = 1,
-                    items = {
-                        "exoforce_matrix_ship_artifact"
-                    }
+                    random_ship_artifact = true
                 },
                 {
                     unit = "vasari_battle_capital_ship",
@@ -149,9 +143,7 @@ local CONFIG = {
                 {
                     unit = "dlc3_herald_super_capital_ship",
                     count = 1,
-                    items = {
-                        "exoforce_matrix_ship_artifact"
-                    }
+                    random_ship_artifact = true
                 },
                 {
                     unit = "dlc3_herald_battle_capital_ship",
@@ -164,9 +156,7 @@ local CONFIG = {
                 {
                     unit = "trader_loyalist_titan",
                     count = 1,
-                    items = {
-                        "resilient_metaloids_ship_artifact"
-                    }
+                    random_ship_artifact = true
                 },
                 {
                     unit = "dlc2_trader_loyalist_super_capital_ship",
@@ -178,9 +168,7 @@ local CONFIG = {
                 {
                     unit = "advent_loyalist_titan",
                     count = 1,
-                    items = {
-                        "resilient_metaloids_ship_artifact"
-                    }
+                    random_ship_artifact = true
                 },
                 {
                     unit = "dlc2_advent_loyalist_super_capital_ship",
@@ -192,9 +180,7 @@ local CONFIG = {
                 {
                     unit = "vasari_loyalist_titan",
                     count = 1,
-                    items = {
-                        "resilient_metaloids_ship_artifact"
-                    }
+                    random_ship_artifact = true
                 },
                 {
                     unit = "dlc2_vasari_loyalist_super_capital_ship",
@@ -206,9 +192,7 @@ local CONFIG = {
                 {
                     unit = "dlc3_herald_titan",
                     count = 1,
-                    items = {
-                        "resilient_metaloids_ship_artifact"
-                    }
+                    random_ship_artifact = true
                 },
                 {
                     unit = "dlc3_herald_battle_capital_ship",
@@ -464,6 +448,26 @@ local function make_spawn_options(wave, ship_spec)
     end
 
     return options
+end
+
+local function with_random_ship_artifact(context, ship_spec)
+    if ship_spec == nil or not ship_spec.random_ship_artifact then
+        return ship_spec
+    end
+
+    if #CONFIG.ship_artifacts == 0 then
+        error("random_ship_artifact requested but CONFIG.ship_artifacts is empty")
+    end
+
+    local resolved_spec = {}
+    for key, value in pairs(ship_spec) do
+        resolved_spec[key] = value
+    end
+
+    local artifact_index = context.random_integer(1, #CONFIG.ship_artifacts)
+    resolved_spec.items = { CONFIG.ship_artifacts[artifact_index] }
+
+    return resolved_spec
 end
 
 local function get_living_playable_player_indices(context)
@@ -734,6 +738,8 @@ local function spawn_elite_ships(
         end
 
         for _ = 1, count do
+            local resolved_elite_ship = with_random_ship_artifact(context, elite_ship)
+
             local unit = spawn_one_ship(
                 context,
                 player_index,
@@ -741,7 +747,7 @@ local function spawn_elite_ships(
                 target_well_id,
                 unit_type,
                 wave,
-                elite_ship
+                resolved_elite_ship
             )
 
             if unit == nil then
