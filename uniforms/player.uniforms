@@ -1,0 +1,7 @@
+{
+    "remove_pickable_players": [
+        "trader_rebel",
+        "advent_rebel",
+        "vasari_rebel"
+    ]
+}
