@@ -38,73 +38,194 @@ local CONFIG = {
     wave_interval_seconds = 20.0,
     hyperspace_arrival_delay_seconds = 10.0,
     wave_timer = "incursion_wave_spawn_timer",
-    recent_unit_slots_per_player = 96,
+    recent_unit_slots_per_player = 192,
 
     -- Spawned wave units are uncontrollable and do not consume normal fleet supply.
     special_operation_kind = "trade_escort",
 
-    -- Runtime player.race -> faction ship-role mapping.
-    factions = {
-        trader_incursion = {
-            name = "tec",
-            ships = {
-                colony_capital_ship = "trader_colony_capital_ship",
-                carrier_cruiser = "trader_carrier_cruiser",
-                heavy_cruiser = "trader_heavy_cruiser"
-            }
-        },
-        advent_incursion = {
-            name = "advent",
-            ships = {
-                colony_capital_ship = "advent_colony_capital_ship",
-                carrier_cruiser = "advent_carrier_cruiser",
-                heavy_cruiser = "advent_heavy_cruiser"
-            }
-        },
-        vasari_incursion = {
-            name = "vasari",
-            ships = {
-                colony_capital_ship = "vasari_colony_capital_ship",
-                carrier_cruiser = "vasari_carrier_cruiser",
-                heavy_cruiser = "vasari_heavy_cruiser"
-            }
-        },
-        dlc3_herald_incursion = {
-            name = "eidolon",
-            ships = {
-                colony_capital_ship = "dlc3_herald_colony_capital_ship",
-                carrier_cruiser = "dlc3_herald_carrier_cruiser"
-                -- No dlc3_herald_heavy_cruiser exists in current game data.
-            }
-        }
-    },
-
-    -- Hard supply budget per wave. The last configured wave repeats indefinitely.
+    -- Global wave settings.
+    -- The last configured wave repeats indefinitely.
+    -- level applies to every mandatory/eligible ship in that wave unless the ship entry
+    -- explicitly defines its own level.
     waves = {
         {
             supply = 75,
-            mandatory = {
-                { role = "colony_capital_ship", count = 1 }
-            }
+            level = 1
         },
         {
             supply = 150,
-            mandatory = {
-                { role = "colony_capital_ship", count = 1 }
-            }
+            level = 1
         },
         {
             supply = 300,
-            mandatory = {
-                { role = "colony_capital_ship", count = 1 }
-            }
+            level = 2
         }
     },
 
-    -- Candidate weights are relative. Equal weights produce roughly equal ship counts.
-    possible_ships = {
-        { role = "carrier_cruiser", unlock_wave = 1, weight = 1 },
-        { role = "heavy_cruiser", unlock_wave = 3, weight = 1 }
+    -- Faction-specific wave composition.
+    --
+    -- mandatory_ships:
+    --   Always processed before weighted ships and always count against the wave supply.
+    --   unlock_wave is the first wave on which the mandatory ship is present.
+    --
+    -- possible_ships:
+    --   Each entry has its own unlock_wave and weight.
+    --   Equal weights are selected approximately evenly.
+    --   Set unlock_wave to 999 to keep a ship configured but disabled for the current setup.
+    --
+    -- Optional per-ship fields supported in both lists:
+    --   level = N
+    --   items = { "item_id", ... }
+    --
+    -- If level is omitted, the current wave's level is used.
+    factions = {
+        trader_incursion = {
+            name = "tec",
+
+            mandatory_ships = {
+                {
+                    unit = "trader_colony_capital_ship",
+                    count = 1,
+                    unlock_wave = 1
+                }
+            },
+
+            possible_ships = {
+                -- Cruisers
+                { unit = "trader_carrier_cruiser",       unlock_wave = 1,   weight = 1 },
+                { unit = "trader_heavy_cruiser",         unlock_wave = 3,   weight = 1 },
+                { unit = "trader_command_cruiser",       unlock_wave = 999, weight = 1 },
+                { unit = "trader_long_range_cruiser",    unlock_wave = 999, weight = 1 },
+                { unit = "trader_medium_cruiser",        unlock_wave = 999, weight = 1 },
+                { unit = "trader_robotics_cruiser",      unlock_wave = 999, weight = 1 },
+                { unit = "trader_torpedo_cruiser",       unlock_wave = 999, weight = 1 },
+
+                -- Capital ships
+                { unit = "trader_battle_capital_ship",   unlock_wave = 999, weight = 1 },
+                { unit = "trader_carrier_capital_ship",  unlock_wave = 999, weight = 1 },
+                { unit = "trader_colony_capital_ship",   unlock_wave = 999, weight = 1 },
+                { unit = "trader_siege_capital_ship",    unlock_wave = 999, weight = 1 },
+                { unit = "trader_support_capital_ship",  unlock_wave = 999, weight = 1 },
+
+                -- Super capital ships: both branches are available in the merged faction.
+                { unit = "dlc2_trader_loyalist_super_capital_ship", unlock_wave = 999, weight = 1 },
+                { unit = "dlc2_trader_rebel_super_capital_ship",    unlock_wave = 999, weight = 1 },
+
+                -- Titans: both branches are available in the merged faction.
+                { unit = "trader_loyalist_titan",        unlock_wave = 999, weight = 1 },
+                { unit = "trader_rebel_titan",           unlock_wave = 999, weight = 1 }
+            }
+        },
+
+        advent_incursion = {
+            name = "advent",
+
+            mandatory_ships = {
+                {
+                    unit = "advent_colony_capital_ship",
+                    count = 1,
+                    unlock_wave = 1
+                }
+            },
+
+            possible_ships = {
+                -- Cruisers
+                { unit = "advent_carrier_cruiser",       unlock_wave = 1,   weight = 1 },
+                { unit = "advent_heavy_cruiser",         unlock_wave = 3,   weight = 1 },
+                { unit = "advent_defense_cruiser",       unlock_wave = 999, weight = 1 },
+                { unit = "advent_guardian_cruiser",      unlock_wave = 999, weight = 1 },
+                { unit = "advent_long_range_cruiser",    unlock_wave = 999, weight = 1 },
+                { unit = "advent_medium_cruiser",        unlock_wave = 999, weight = 1 },
+                { unit = "advent_subjugator_cruiser",    unlock_wave = 999, weight = 1 },
+
+                -- Capital ships
+                { unit = "advent_battle_capital_ship",           unlock_wave = 999, weight = 1 },
+                { unit = "advent_battle_psionic_capital_ship",   unlock_wave = 999, weight = 1 },
+                { unit = "advent_carrier_capital_ship",          unlock_wave = 999, weight = 1 },
+                { unit = "advent_colony_capital_ship",           unlock_wave = 999, weight = 1 },
+                { unit = "advent_planet_psionic_capital_ship",   unlock_wave = 999, weight = 1 },
+
+                -- Super capital ships: both branches are available in the merged faction.
+                { unit = "dlc2_advent_loyalist_super_capital_ship", unlock_wave = 999, weight = 1 },
+                { unit = "dlc2_advent_rebel_super_capital_ship",    unlock_wave = 999, weight = 1 },
+
+                -- Titans: both branches are available in the merged faction.
+                { unit = "advent_loyalist_titan",         unlock_wave = 999, weight = 1 },
+                { unit = "advent_rebel_titan",            unlock_wave = 999, weight = 1 }
+            }
+        },
+
+        vasari_incursion = {
+            name = "vasari",
+
+            mandatory_ships = {
+                {
+                    unit = "vasari_colony_capital_ship",
+                    count = 1,
+                    unlock_wave = 1
+                }
+            },
+
+            possible_ships = {
+                -- Cruisers
+                { unit = "vasari_carrier_cruiser",        unlock_wave = 1,   weight = 1 },
+                { unit = "vasari_heavy_cruiser",          unlock_wave = 3,   weight = 1 },
+                { unit = "vasari_antiarmor_cruiser",      unlock_wave = 999, weight = 1 },
+                { unit = "vasari_colony_cruiser",         unlock_wave = 999, weight = 1 },
+                { unit = "vasari_fabricator_cruiser",     unlock_wave = 999, weight = 1 },
+                { unit = "vasari_overseer_cruiser",       unlock_wave = 999, weight = 1 },
+                { unit = "vasari_siege_cruiser",          unlock_wave = 999, weight = 1 },
+
+                -- Capital ships
+                { unit = "vasari_battle_capital_ship",    unlock_wave = 999, weight = 1 },
+                { unit = "vasari_carrier_capital_ship",   unlock_wave = 999, weight = 1 },
+                { unit = "vasari_colony_capital_ship",    unlock_wave = 999, weight = 1 },
+                { unit = "vasari_marauder_capital_ship",  unlock_wave = 999, weight = 1 },
+                { unit = "vasari_siege_capital_ship",     unlock_wave = 999, weight = 1 },
+
+                -- Super capital ships: both branches are available in the merged faction.
+                { unit = "dlc2_vasari_loyalist_super_capital_ship", unlock_wave = 999, weight = 1 },
+                { unit = "dlc2_vasari_rebel_super_capital_ship",    unlock_wave = 999, weight = 1 },
+
+                -- Titans: both branches are available in the merged faction.
+                { unit = "vasari_loyalist_titan",         unlock_wave = 999, weight = 1 },
+                { unit = "vasari_rebel_titan",            unlock_wave = 999, weight = 1 }
+            }
+        },
+
+        dlc3_herald_incursion = {
+            name = "eidolon",
+
+            mandatory_ships = {
+                {
+                    unit = "dlc3_herald_colony_capital_ship",
+                    count = 1,
+                    unlock_wave = 1
+                }
+            },
+
+            possible_ships = {
+                -- Cruisers
+                { unit = "dlc3_herald_carrier_cruiser",       unlock_wave = 1,   weight = 1 },
+                { unit = "dlc3_herald_corruptor_cruiser",     unlock_wave = 999, weight = 1 },
+                { unit = "dlc3_herald_defiler_cruiser",       unlock_wave = 999, weight = 1 },
+                { unit = "dlc3_herald_long_range_cruiser",    unlock_wave = 999, weight = 1 },
+                { unit = "dlc3_herald_siege_cruiser",         unlock_wave = 999, weight = 1 },
+
+                -- Capital ships
+                { unit = "dlc3_herald_battle_capital_ship",   unlock_wave = 999, weight = 1 },
+                { unit = "dlc3_herald_carrier_capital_ship",  unlock_wave = 999, weight = 1 },
+                { unit = "dlc3_herald_colony_capital_ship",   unlock_wave = 999, weight = 1 },
+                { unit = "dlc3_herald_siege_capital_ship",    unlock_wave = 999, weight = 1 },
+                { unit = "dlc3_herald_support_capital_ship",  unlock_wave = 999, weight = 1 },
+
+                -- Super capital ship
+                { unit = "dlc3_herald_super_capital_ship",    unlock_wave = 999, weight = 1 },
+
+                -- Titan
+                { unit = "dlc3_herald_titan",                 unlock_wave = 999, weight = 1 }
+            }
+        }
     }
 }
 
@@ -147,14 +268,6 @@ local function get_wave_definition(wave_number)
     return CONFIG.waves[wave_index], wave_index
 end
 
-local function get_ship_type(faction, role)
-    if faction == nil or faction.ships == nil or role == nil then
-        return nil
-    end
-
-    return faction.ships[role]
-end
-
 local function get_ship_supply_cost(context, unit_type)
     if unit_type == nil then
         return nil
@@ -168,14 +281,27 @@ local function get_ship_supply_cost(context, unit_type)
     return cost
 end
 
-local function make_spawn_options(ship_spec)
-    local options = spawn_unit_options.new()
-
-    if ship_spec.level ~= nil then
-        options.level = math.max(0, ship_spec.level - 1)
+local function get_effective_ship_level(wave, ship_spec)
+    if ship_spec ~= nil and ship_spec.level ~= nil then
+        return ship_spec.level
     end
 
-    if ship_spec.items ~= nil then
+    if wave ~= nil and wave.level ~= nil then
+        return wave.level
+    end
+
+    return 1
+end
+
+local function make_spawn_options(wave, ship_spec)
+    local options = spawn_unit_options.new()
+    local level = get_effective_ship_level(wave, ship_spec)
+
+    -- Experienced ships naturally start at level 1.
+    -- spawn_options.level is the number of additional levels.
+    options.level = math.max(0, level - 1)
+
+    if ship_spec ~= nil and ship_spec.items ~= nil then
         for _, item_name in ipairs(ship_spec.items) do
             options:add_item(item_name)
         end
@@ -348,9 +474,9 @@ local function retarget_recent_units(context, player_index, target_well_id)
     end
 end
 
-local function spawn_one_ship(context, player_index, spawn_well_id, target_well_id, unit_type, ship_spec)
+local function spawn_one_ship(context, player_index, spawn_well_id, target_well_id, unit_type, wave, ship_spec)
     local spawn_def = spawn_units_definition.new()
-    spawn_def:add_required_units(unit_type, 1, make_spawn_options(ship_spec))
+    spawn_def:add_required_units(unit_type, 1, make_spawn_options(wave, ship_spec))
 
     local spawned_units = context.simulation:create_units_by_id(
         spawn_def,
@@ -384,14 +510,15 @@ end
 local function build_eligible_weight_pool(context, faction, wave_number, remaining_supply)
     local pool = {}
 
-    for _, candidate in ipairs(CONFIG.possible_ships) do
-        if wave_number >= (candidate.unlock_wave or 1) then
-            local unit_type = get_ship_type(faction, candidate.role)
+    for _, candidate in ipairs(faction.possible_ships or {}) do
+        local unlock_wave = candidate.unlock_wave or 1
+        local weight = math.max(0, math.floor(candidate.weight or 0))
+
+        if wave_number >= unlock_wave and weight > 0 then
+            local unit_type = candidate.unit
             local supply_cost = get_ship_supply_cost(context, unit_type)
 
             if unit_type ~= nil and supply_cost ~= nil and supply_cost <= remaining_supply then
-                local weight = math.max(1, math.floor(candidate.weight or 1))
-
                 for _ = 1, weight do
                     pool[#pool + 1] = {
                         spec = candidate,
@@ -403,7 +530,8 @@ local function build_eligible_weight_pool(context, faction, wave_number, remaini
         end
     end
 
-    -- Deterministic shuffle. A weight-cycle keeps equal weights relatively even per wave.
+    -- Deterministic shuffle. Rebuilding the pool after each complete cycle means
+    -- equal weights remain relatively even while the exact order still varies.
     for i = #pool, 2, -1 do
         local j = context.random_integer(1, i)
         pool[i], pool[j] = pool[j], pool[i]
@@ -419,6 +547,7 @@ local function update_hud(context)
     local next_wave_number = (context.instance.wave_number or 0) + 1
     local next_wave = get_wave_definition(next_wave_number)
     local next_supply = next_wave ~= nil and next_wave.supply or 0
+    local next_level = next_wave ~= nil and (next_wave.level or 1) or 1
 
     context.simulation:display_text("timer_label", "Next Incursion Wave")
     context.simulation:display_text("timer_value", string.format("0:%02d", seconds))
@@ -427,6 +556,7 @@ local function update_hud(context)
     local value =
         "Wave " .. tostring(next_wave_number)
         .. " | " .. tostring(next_supply) .. " supply"
+        .. " | level " .. tostring(next_level)
 
     if context.instance.status_text ~= nil and context.instance.status_text ~= "" then
         value = value .. " | " .. context.instance.status_text
@@ -469,48 +599,50 @@ function Pirate_incursion_wave_spawn_callback(context)
                             local spawned_count = 0
                             local composition = {}
 
-                            -- Mandatory ships consume budget first.
-                            for _, mandatory in ipairs(wave.mandatory or {}) do
-                                local unit_type = get_ship_type(faction, mandatory.role)
-                                local supply_cost = get_ship_supply_cost(context, unit_type)
-                                local count = mandatory.count or 1
+                            -- Mandatory faction ships consume budget first.
+                            for _, mandatory in ipairs(faction.mandatory_ships or {}) do
+                                local unlock_wave = mandatory.unlock_wave or 1
 
-                                if unit_type == nil then
-                                    error(
-                                        "mandatory role '" .. tostring(mandatory.role)
-                                        .. "' has no unit mapping for " .. tostring(faction.name)
-                                    )
-                                end
+                                if wave_number >= unlock_wave then
+                                    local unit_type = mandatory.unit
+                                    local supply_cost = get_ship_supply_cost(context, unit_type)
+                                    local count = mandatory.count or 1
 
-                                if supply_cost == nil then
-                                    error("could not read supply cost for " .. tostring(unit_type))
-                                end
+                                    if unit_type == nil then
+                                        error("mandatory ship entry is missing unit for " .. tostring(faction.name))
+                                    end
 
-                                for _ = 1, count do
-                                    if supply_used + supply_cost > supply_budget then
-                                        error(
-                                            "mandatory ships exceed wave budget: "
-                                            .. tostring(supply_used + supply_cost)
-                                            .. " > " .. tostring(supply_budget)
+                                    if supply_cost == nil then
+                                        error("could not read supply cost for " .. tostring(unit_type))
+                                    end
+
+                                    for _ = 1, count do
+                                        if supply_used + supply_cost > supply_budget then
+                                            error(
+                                                "mandatory ships exceed wave budget: "
+                                                .. tostring(supply_used + supply_cost)
+                                                .. " > " .. tostring(supply_budget)
+                                            )
+                                        end
+
+                                        local unit = spawn_one_ship(
+                                            context,
+                                            player_index,
+                                            spawn_well.id,
+                                            target_well_id,
+                                            unit_type,
+                                            wave,
+                                            mandatory
                                         )
+
+                                        if unit == nil then
+                                            error("failed to spawn mandatory ship " .. tostring(unit_type))
+                                        end
+
+                                        supply_used = supply_used + supply_cost
+                                        spawned_count = spawned_count + 1
+                                        composition[unit_type] = (composition[unit_type] or 0) + 1
                                     end
-
-                                    local unit = spawn_one_ship(
-                                        context,
-                                        player_index,
-                                        spawn_well.id,
-                                        target_well_id,
-                                        unit_type,
-                                        mandatory
-                                    )
-
-                                    if unit == nil then
-                                        error("failed to spawn mandatory ship " .. tostring(unit_type))
-                                    end
-
-                                    supply_used = supply_used + supply_cost
-                                    spawned_count = spawned_count + 1
-                                    composition[unit_type] = (composition[unit_type] or 0) + 1
                                 end
                             end
 
@@ -545,6 +677,7 @@ function Pirate_incursion_wave_spawn_callback(context)
                                         spawn_well.id,
                                         target_well_id,
                                         choice.unit_type,
+                                        wave,
                                         choice.spec
                                     )
 
