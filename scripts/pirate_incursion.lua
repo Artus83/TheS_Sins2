@@ -49,21 +49,42 @@ local CONFIG = {
     -- explicitly defines its own level.
     waves = {
         {
-            supply = 75,
-            level = 1
+            supply = 100,
+            level = 3
         },
-        {
-            supply = 150,
-            level = 1
-        },
-        {
-            supply = 300,
-            level = 2
+        { --30
+            supply = 250,
+            level = 4
         },
         {
             supply = 500,
-            level = 2,
+            level = 4
+        },
+        { --60
+            supply = 1000,
+            level = 5,
             elite = 1
+        },
+        {
+            supply = 1500,
+            level = 5
+        },
+        { --90
+            supply = 2000,
+            level = 5
+        },
+        {
+            supply = 2000,
+            level = 6
+        },
+        { --120
+            supply = 2400,
+            level = 6,
+            elite = 2
+        },
+        { --endless
+            supply = 2400,
+            level = 6
         }
     },
 
@@ -137,11 +158,64 @@ local CONFIG = {
                     count = 2
                 }
             }
-        }
+        },
+        [2] = {
+            trader_incursion = {
+                {
+                    unit = "trader_loyalist_titan",
+                    count = 1,
+                    items = {
+                        "resilient_metaloids_ship_artifact"
+                    }
+                },
+                {
+                    unit = "dlc2_trader_loyalist_super_capital_ship",
+                    count = 2
+                }
+            },
 
-        -- Add future elite definitions as:
-        -- [2] = { ... },
-        -- [3] = { ... }
+            advent_incursion = {
+                {
+                    unit = "advent_loyalist_titan",
+                    count = 1,
+                    items = {
+                        "resilient_metaloids_ship_artifact"
+                    }
+                },
+                {
+                    unit = "dlc2_advent_loyalist_super_capital_ship",
+                    count = 2
+                }
+            },
+
+            vasari_incursion = {
+                {
+                    unit = "vasari_loyalist_titan",
+                    count = 1,
+                    items = {
+                        "resilient_metaloids_ship_artifact"
+                    }
+                },
+                {
+                    unit = "dlc2_vasari_loyalist_super_capital_ship",
+                    count = 2
+                }
+            },
+
+            dlc3_herald_incursion = {
+                {
+                    unit = "dlc3_herald_titan",
+                    count = 1,
+                    items = {
+                        "resilient_metaloids_ship_artifact"
+                    }
+                },
+                {
+                    unit = "dlc3_herald_battle_capital_ship",
+                    count = 6
+                }
+            }
+        }
     },
 
     -- Faction-specific wave composition.
@@ -174,28 +248,28 @@ local CONFIG = {
 
             possible_ships = {
                 -- Cruisers
-                { unit = "trader_carrier_cruiser",       unlock_wave = 1,   weight = 1 },
-                { unit = "trader_heavy_cruiser",         unlock_wave = 3,   weight = 1 },
+                { unit = "trader_carrier_cruiser",       unlock_wave = 2,   weight = 32 },
+                { unit = "trader_heavy_cruiser",         unlock_wave = 1,   weight = 56 },
                 { unit = "trader_command_cruiser",       unlock_wave = 999, weight = 1 },
                 { unit = "trader_long_range_cruiser",    unlock_wave = 999, weight = 1 },
                 { unit = "trader_medium_cruiser",        unlock_wave = 999, weight = 1 },
-                { unit = "trader_robotics_cruiser",      unlock_wave = 999, weight = 1 },
-                { unit = "trader_torpedo_cruiser",       unlock_wave = 999, weight = 1 },
+                { unit = "trader_robotics_cruiser",      unlock_wave = 3,   weight = 40 },
+                { unit = "trader_torpedo_cruiser",       unlock_wave = 4,   weight = 32 },
 
                 -- Capital ships
-                { unit = "trader_battle_capital_ship",   unlock_wave = 999, weight = 1 },
-                { unit = "trader_carrier_capital_ship",  unlock_wave = 999, weight = 1 },
-                { unit = "trader_colony_capital_ship",   unlock_wave = 999, weight = 1 },
-                { unit = "trader_siege_capital_ship",    unlock_wave = 999, weight = 1 },
-                { unit = "trader_support_capital_ship",  unlock_wave = 999, weight = 1 },
+                { unit = "trader_battle_capital_ship",   unlock_wave = 3, weight = 12 },
+                { unit = "trader_carrier_capital_ship",  unlock_wave = 3, weight = 8 },
+                { unit = "trader_colony_capital_ship",   unlock_wave = 3, weight = 4 },
+                { unit = "trader_siege_capital_ship",    unlock_wave = 3, weight = 4 },
+                { unit = "trader_support_capital_ship",  unlock_wave = 3, weight = 4 },
 
                 -- Super capital ships: both branches are available in the merged faction.
-                { unit = "dlc2_trader_loyalist_super_capital_ship", unlock_wave = 999, weight = 1 },
-                { unit = "dlc2_trader_rebel_super_capital_ship",    unlock_wave = 999, weight = 1 },
+                { unit = "dlc2_trader_loyalist_super_capital_ship", unlock_wave = 7, weight = 2 },
+                { unit = "dlc2_trader_rebel_super_capital_ship",    unlock_wave = 7, weight = 2 },
 
                 -- Titans: both branches are available in the merged faction.
-                { unit = "trader_loyalist_titan",        unlock_wave = 999, weight = 1 },
-                { unit = "trader_rebel_titan",           unlock_wave = 999, weight = 1 }
+                { unit = "trader_loyalist_titan",        unlock_wave = 9, weight = 1 },
+                { unit = "trader_rebel_titan",           unlock_wave = 9, weight = 1 }
             }
         },
 
@@ -212,28 +286,28 @@ local CONFIG = {
 
             possible_ships = {
                 -- Cruisers
-                { unit = "advent_carrier_cruiser",       unlock_wave = 1,   weight = 1 },
-                { unit = "advent_heavy_cruiser",         unlock_wave = 3,   weight = 1 },
+                { unit = "advent_carrier_cruiser",       unlock_wave = 2,   weight = 40 },
+                { unit = "advent_heavy_cruiser",         unlock_wave = 1,   weight = 56 },
                 { unit = "advent_defense_cruiser",       unlock_wave = 999, weight = 1 },
-                { unit = "advent_guardian_cruiser",      unlock_wave = 999, weight = 1 },
-                { unit = "advent_long_range_cruiser",    unlock_wave = 999, weight = 1 },
+                { unit = "advent_guardian_cruiser",      unlock_wave = 3  , weight = 32 },
+                { unit = "advent_long_range_cruiser",    unlock_wave = 4,   weight = 32 },
                 { unit = "advent_medium_cruiser",        unlock_wave = 999, weight = 1 },
                 { unit = "advent_subjugator_cruiser",    unlock_wave = 999, weight = 1 },
 
                 -- Capital ships
-                { unit = "advent_battle_capital_ship",           unlock_wave = 999, weight = 1 },
-                { unit = "advent_battle_psionic_capital_ship",   unlock_wave = 999, weight = 1 },
-                { unit = "advent_carrier_capital_ship",          unlock_wave = 999, weight = 1 },
-                { unit = "advent_colony_capital_ship",           unlock_wave = 999, weight = 1 },
-                { unit = "advent_planet_psionic_capital_ship",   unlock_wave = 999, weight = 1 },
+                { unit = "advent_battle_capital_ship",           unlock_wave = 3, weight = 12 },
+                { unit = "advent_battle_psionic_capital_ship",   unlock_wave = 3, weight = 8 },
+                { unit = "advent_carrier_capital_ship",          unlock_wave = 3, weight = 4 },
+                { unit = "advent_colony_capital_ship",           unlock_wave = 3, weight = 4 },
+                { unit = "advent_planet_psionic_capital_ship",   unlock_wave = 3, weight = 4 },
 
                 -- Super capital ships: both branches are available in the merged faction.
-                { unit = "dlc2_advent_loyalist_super_capital_ship", unlock_wave = 999, weight = 1 },
-                { unit = "dlc2_advent_rebel_super_capital_ship",    unlock_wave = 999, weight = 1 },
+                { unit = "dlc2_advent_loyalist_super_capital_ship", unlock_wave = 7, weight = 2 },
+                { unit = "dlc2_advent_rebel_super_capital_ship",    unlock_wave = 7, weight = 2 },
 
                 -- Titans: both branches are available in the merged faction.
-                { unit = "advent_loyalist_titan",         unlock_wave = 999, weight = 1 },
-                { unit = "advent_rebel_titan",            unlock_wave = 999, weight = 1 }
+                { unit = "advent_loyalist_titan",         unlock_wave = 9, weight = 1 },
+                { unit = "advent_rebel_titan",            unlock_wave = 9, weight = 1 }
             }
         },
 
@@ -250,8 +324,8 @@ local CONFIG = {
 
             possible_ships = {
                 -- Cruisers
-                { unit = "vasari_carrier_cruiser",        unlock_wave = 1,   weight = 1 },
-                { unit = "vasari_heavy_cruiser",          unlock_wave = 3,   weight = 1 },
+                { unit = "vasari_carrier_cruiser",        unlock_wave = 2,   weight = 64 },
+                { unit = "vasari_heavy_cruiser",          unlock_wave = 1,   weight = 96 },
                 { unit = "vasari_antiarmor_cruiser",      unlock_wave = 999, weight = 1 },
                 { unit = "vasari_colony_cruiser",         unlock_wave = 999, weight = 1 },
                 { unit = "vasari_fabricator_cruiser",     unlock_wave = 999, weight = 1 },
@@ -259,19 +333,19 @@ local CONFIG = {
                 { unit = "vasari_siege_cruiser",          unlock_wave = 999, weight = 1 },
 
                 -- Capital ships
-                { unit = "vasari_battle_capital_ship",    unlock_wave = 999, weight = 1 },
-                { unit = "vasari_carrier_capital_ship",   unlock_wave = 999, weight = 1 },
-                { unit = "vasari_colony_capital_ship",    unlock_wave = 999, weight = 1 },
-                { unit = "vasari_marauder_capital_ship",  unlock_wave = 999, weight = 1 },
-                { unit = "vasari_siege_capital_ship",     unlock_wave = 999, weight = 1 },
+                { unit = "vasari_battle_capital_ship",    unlock_wave = 3, weight = 12 },
+                { unit = "vasari_carrier_capital_ship",   unlock_wave = 3, weight = 8 },
+                { unit = "vasari_colony_capital_ship",    unlock_wave = 3, weight = 4 },
+                { unit = "vasari_marauder_capital_ship",  unlock_wave = 3, weight = 4 },
+                { unit = "vasari_siege_capital_ship",     unlock_wave = 3, weight = 4 },
 
                 -- Super capital ships: both branches are available in the merged faction.
-                { unit = "dlc2_vasari_loyalist_super_capital_ship", unlock_wave = 999, weight = 1 },
-                { unit = "dlc2_vasari_rebel_super_capital_ship",    unlock_wave = 999, weight = 1 },
+                { unit = "dlc2_vasari_loyalist_super_capital_ship", unlock_wave = 7, weight = 2 },
+                { unit = "dlc2_vasari_rebel_super_capital_ship",    unlock_wave = 7, weight = 2 },
 
                 -- Titans: both branches are available in the merged faction.
-                { unit = "vasari_loyalist_titan",         unlock_wave = 999, weight = 1 },
-                { unit = "vasari_rebel_titan",            unlock_wave = 999, weight = 1 }
+                { unit = "vasari_loyalist_titan",         unlock_wave = 9, weight = 1 },
+                { unit = "vasari_rebel_titan",            unlock_wave = 9, weight = 1 }
             }
         },
 
@@ -288,24 +362,24 @@ local CONFIG = {
 
             possible_ships = {
                 -- Cruisers
-                { unit = "dlc3_herald_carrier_cruiser",       unlock_wave = 1,   weight = 1 },
+                { unit = "dlc3_herald_carrier_cruiser",       unlock_wave = 1,   weight = 96 },
                 { unit = "dlc3_herald_corruptor_cruiser",     unlock_wave = 999, weight = 1 },
                 { unit = "dlc3_herald_defiler_cruiser",       unlock_wave = 999, weight = 1 },
-                { unit = "dlc3_herald_long_range_cruiser",    unlock_wave = 999, weight = 1 },
+                { unit = "dlc3_herald_long_range_cruiser",    unlock_wave = 4,   weight = 64 },
                 { unit = "dlc3_herald_siege_cruiser",         unlock_wave = 999, weight = 1 },
 
                 -- Capital ships
-                { unit = "dlc3_herald_battle_capital_ship",   unlock_wave = 999, weight = 1 },
-                { unit = "dlc3_herald_carrier_capital_ship",  unlock_wave = 999, weight = 1 },
-                { unit = "dlc3_herald_colony_capital_ship",   unlock_wave = 999, weight = 1 },
-                { unit = "dlc3_herald_siege_capital_ship",    unlock_wave = 999, weight = 1 },
-                { unit = "dlc3_herald_support_capital_ship",  unlock_wave = 999, weight = 1 },
+                { unit = "dlc3_herald_battle_capital_ship",   unlock_wave = 3, weight = 12 },
+                { unit = "dlc3_herald_carrier_capital_ship",  unlock_wave = 3, weight = 8 },
+                { unit = "dlc3_herald_colony_capital_ship",   unlock_wave = 3, weight = 4 },
+                { unit = "dlc3_herald_siege_capital_ship",    unlock_wave = 3, weight = 4 },
+                { unit = "dlc3_herald_support_capital_ship",  unlock_wave = 3, weight = 4 },
 
                 -- Super capital ship
                 { unit = "dlc3_herald_super_capital_ship",    unlock_wave = 999, weight = 1 },
 
                 -- Titan
-                { unit = "dlc3_herald_titan",                 unlock_wave = 999, weight = 1 }
+                { unit = "dlc3_herald_titan",                 unlock_wave = 9, weight = 1 }
             }
         }
     }
