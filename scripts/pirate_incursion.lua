@@ -29,7 +29,7 @@ function Get_event_metadata()
     metadata.author = "TheS"
     metadata.priority = 50.0
     metadata.incompatible_event_ids = {"test_event_v1"}
-    metadata.max_concurrent_instances = 10
+    metadata.max_concurrent_instances = 1
 
     return metadata
 end
@@ -49,9 +49,9 @@ local CONFIG = {
         dlc3_herald_incursion = true
     },
 
-    -- Confirmed by the previous test:
-    -- makes spawned units uncontrollable and they do not consume normal fleet supply.
-    special_operation_kind = "trade_ship"
+    -- Spawned wave units are uncontrollable and do not consume normal fleet supply.
+    -- Do not classify them as trade ships, because that can invoke trade-ship escort behavior.
+    special_operation_kind = "trade_escort"
 }
 
 local function debug_print(message)
@@ -104,6 +104,7 @@ local function is_wave_enabled_for_race(race)
     end
 
     race = tostring(race)
+
     if CONFIG.incursion_player_ids[race] ~= true then
         return false, nil, nil
     end
@@ -149,6 +150,7 @@ local function find_target_player_index(context, attacker_player_index)
         if player.is_npc or player.has_lost then
             return false
         end
+
         return player.player_index ~= attacker_player_index
     end)
 
@@ -247,6 +249,7 @@ end
 local function store_recent_unit(context, player_index, unit_id)
     local slot_key = player_state_key("recent_slot_", player_index)
     local slot = (context.instance[slot_key] or 0) + 1
+
     if slot > CONFIG.recent_unit_slots_per_player then
         slot = 1
     end
@@ -285,6 +288,7 @@ local function update_hud(context)
     context.simulation:display_text("progress_label", "Next Spawn")
 
     local value = "Battle Capital Ships - Level " .. tostring(next_level)
+
     if context.instance.status_text ~= nil and context.instance.status_text ~= "" then
         value = value .. " | " .. context.instance.status_text
     end
@@ -294,7 +298,10 @@ end
 
 function Pirate_incursion_wave_spawn_callback(context)
     context.instance.wave_number = (context.instance.wave_number or 0) + 1
-    local level = math.min(context.instance.wave_number, CONFIG.max_level)
+
+    -- Desired capital-ship level is wave 1 -> level 1 through wave 10 -> level 10.
+    -- Waves 11+ repeat the level-10 wave indefinitely.
+    local desired_level = math.min(context.instance.wave_number, CONFIG.max_level)
     context.instance.next_wave_time = context.simulation.current_time + CONFIG.wave_interval_seconds
 
     local success, error_message = pcall(function()
@@ -306,6 +313,7 @@ function Pirate_incursion_wave_spawn_callback(context)
 
         for _, player_index in ipairs(playable_indices) do
             local player = context.simulation:get_player_by_player_index(player_index)
+
             if player ~= nil then
                 local enabled, faction, unit_type = is_wave_enabled_for_race(player.race)
 
@@ -318,7 +326,11 @@ function Pirate_incursion_wave_spawn_callback(context)
 
                         if target_well_id ~= nil then
                             local spawn_options = spawn_unit_options.new()
-                            spawn_options.level = level
+
+                            -- Capital ships naturally begin at level 1.
+                            -- spawn_options.level represents added levels:
+                            -- desired 1..10 therefore maps to 0..9.
+                            spawn_options.level = math.max(0, desired_level - 1)
 
                             local spawn_def = spawn_units_definition.new()
                             spawn_def:add_required_units(unit_type, 1, spawn_options)
@@ -335,15 +347,23 @@ function Pirate_incursion_wave_spawn_callback(context)
                                 CONFIG.special_operation_kind
                             )
 
-                            if spawned_units ~= nil then
-                                for _, unit in ipairs(spawned_units) do
-                                    spawned_count = spawned_count + 1
-                                    store_recent_unit(context, player_index, unit.id)
+                            if spawned_units ~= nil and #spawned_units > 0 then
+                                -- This test intentionally spawns exactly one ship per wave globally.
+                                -- Keep the first returned unit and remove any unexpected extras.
+                                local unit = spawned_units[1]
+                                spawned_count = 1
+                                store_recent_unit(context, player_index, unit.id)
 
-                                    if order_unit_to_target(context, unit.id, target_well_id) then
-                                        ordered_count = ordered_count + 1
-                                    end
+                                if order_unit_to_target(context, unit.id, target_well_id) then
+                                    ordered_count = 1
                                 end
+
+                                for extra_index = 2, #spawned_units do
+                                    context.simulation:despawn_unit_by_id(spawned_units[extra_index].id)
+                                end
+
+                                -- One successful incursion-player spawn is the complete test wave.
+                                break
                             end
                         end
                     end
@@ -351,7 +371,13 @@ function Pirate_incursion_wave_spawn_callback(context)
                     skipped_races = skipped_races + 1
                     debug_print("unsupported runtime race: " .. tostring(player.race))
                 else
-                    debug_print("wave disabled for faction " .. tostring(faction) .. " (runtime race " .. tostring(player.race) .. ")")
+                    debug_print(
+                        "wave disabled for faction "
+                        .. tostring(faction)
+                        .. " (runtime race "
+                        .. tostring(player.race)
+                        .. ")"
+                    )
                 end
             end
         end
@@ -359,10 +385,11 @@ function Pirate_incursion_wave_spawn_callback(context)
         set_status(
             context,
             "wave " .. tostring(context.instance.wave_number)
-                .. " players " .. tostring(supported_players)
-                .. ", spawned " .. tostring(spawned_count)
-                .. ", ordered " .. tostring(ordered_count)
-                .. (skipped_races > 0 and (", unsupported " .. tostring(skipped_races)) or "")
+            .. " level " .. tostring(desired_level)
+            .. " players " .. tostring(supported_players)
+            .. ", spawned " .. tostring(spawned_count)
+            .. ", ordered " .. tostring(ordered_count)
+            .. (skipped_races > 0 and (", unsupported " .. tostring(skipped_races)) or "")
         )
     end)
 
@@ -373,6 +400,7 @@ function Pirate_incursion_wave_spawn_callback(context)
     local hud_success, hud_error = pcall(function()
         update_hud(context)
     end)
+
     if not hud_success then
         debug_print("HUD ERROR: " .. tostring(hud_error))
     end
@@ -380,6 +408,7 @@ end
 
 local function update_player_target_progress(context, attacker_player_index)
     local attacker = context.simulation:get_player_by_player_index(attacker_player_index)
+
     if attacker == nil or attacker.has_lost then
         clear_target_for_player(context, attacker_player_index)
         return
@@ -400,31 +429,41 @@ local function update_player_target_progress(context, attacker_player_index)
     if target_player_index == nil or target_well_id == nil then
         local source_well = get_home_gravity_well(context, attacker_player_index)
         local _, new_target_well_id = ensure_target_for_player(context, attacker_player_index, source_well)
+
         if new_target_well_id ~= nil then
             retarget_recent_units(context, attacker_player_index, new_target_well_id)
         end
+
         return
     end
 
     local target_player = context.simulation:get_player_by_player_index(target_player_index)
+
     if target_player == nil or target_player.has_lost then
         clear_target_for_player(context, attacker_player_index)
+
         local source_well = get_home_gravity_well(context, attacker_player_index)
         local _, new_target_well_id = ensure_target_for_player(context, attacker_player_index, source_well)
+
         if new_target_well_id ~= nil then
             retarget_recent_units(context, attacker_player_index, new_target_well_id)
         end
+
         return
     end
 
     local target_well = context.simulation:get_unit_by_id(target_well_id)
+
     if target_well == nil then
         context.instance[target_well_key] = nil
+
         local source_well = get_home_gravity_well(context, attacker_player_index)
         local _, new_target_well_id = ensure_target_for_player(context, attacker_player_index, source_well)
+
         if new_target_well_id ~= nil then
             retarget_recent_units(context, attacker_player_index, new_target_well_id)
         end
+
         return
     end
 
@@ -449,7 +488,13 @@ local function update_player_target_progress(context, attacker_player_index)
             retarget_recent_units(context, attacker_player_index, new_target_well.id)
         else
             clear_target_for_player(context, attacker_player_index)
-            local _, next_target_well_id = ensure_target_for_player(context, attacker_player_index, target_well)
+
+            local _, next_target_well_id = ensure_target_for_player(
+                context,
+                attacker_player_index,
+                target_well
+            )
+
             if next_target_well_id ~= nil then
                 retarget_recent_units(context, attacker_player_index, next_target_well_id)
             end
@@ -459,6 +504,7 @@ end
 
 local function update_all_target_progress(context)
     local playable_indices = get_living_playable_player_indices(context)
+
     for _, player_index in ipairs(playable_indices) do
         update_player_target_progress(context, player_index)
     end
@@ -467,6 +513,7 @@ end
 function Pirate_incursion_register(context)
     context.simulation:display_text("timer_label", "FACTION WAVE TEST LOADED")
     context.simulation:display_text("timer_value", "register() called")
+
     debug_print("register() called")
     return true
 end
@@ -510,6 +557,7 @@ function Pirate_incursion_on_update(context)
 
     if not success then
         debug_print("UPDATE ERROR: " .. tostring(error_message))
+
         pcall(function()
             set_status(context, "UPDATE ERROR: " .. tostring(error_message))
         end)
@@ -526,6 +574,7 @@ end
 
 function Pirate_incursion_on_teardown(context)
     debug_print("on_teardown() called")
+
     context.simulation:display_text("timer_label", "")
     context.simulation:display_text("timer_value", "")
     context.simulation:display_text("progress_label", "")
