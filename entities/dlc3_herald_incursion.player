@@ -7222,6 +7222,29 @@
             }
         }
     ],
+    "garrison": {
+        "spawn_type": "build_from_factory",
+        "special_operation_unit_kind": "garrison",
+        "build_kinds": [
+            {
+                "build_kind": "cruiser"
+            }
+        ],
+        "factory_build_time_scalar": 1.5,
+        "units": {
+            "random_units": [
+                {
+                    "unit": "dlc3_herald_long_range_cruiser",
+                    "weight": 40.0
+                },
+                {
+                    "unit": "dlc3_herald_carrier_cruiser",
+                    "weight": 20.0
+                }
+            ]
+        },
+        "base_max_supply": 100
+    },
     "max_supply": {
         "levels": [
             {

@@ -6906,20 +6906,18 @@
         "build_kinds": [
             {
                 "build_kind": "cruiser"
-            },
-            {
-                "build_kind": "capital_ship"
-            },
-            {
-                "build_kind": "super_capital_ship"
             }
         ],
         "factory_build_time_scalar": 1.5,
         "units": {
             "random_units": [
                 {
-                    "unit": "dlc3_herald_battle_capital_ship",
-                    "weight": 100.0
+                    "unit": "dlc3_herald_long_range_cruiser",
+                    "weight": 40.0
+                },
+                {
+                    "unit": "dlc3_herald_carrier_cruiser",
+                    "weight": 20.0
                 }
             ]
         },

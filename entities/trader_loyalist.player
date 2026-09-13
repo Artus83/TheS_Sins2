@@ -5488,36 +5488,22 @@
         "build_kinds": [
             {
                 "build_kind": "cruiser"
-            },
-            {
-                "build_kind": "capital_ship"
-            },
-            {
-                "build_kind": "super_capital_ship"
             }
         ],
         "factory_build_time_scalar": 1.5,
         "units": {
             "random_units": [
                 {
-                    "unit": "trader_robotics_cruiser",
+                    "unit": "trader_heavy_cruiser",
                     "weight": 40.0
                 },
                 {
-                    "unit": "trader_battle_capital_ship",
+                    "unit": "trader_carrier_cruiser",
                     "weight": 20.0
                 },
                 {
-                    "unit": "trader_carrier_capital_ship",
+                    "unit": "trader_robotics_cruiser",
                     "weight": 10.0
-                },
-                {
-                    "unit": "dlc2_trader_loyalist_super_capital_ship",
-                    "weight": 5.0
-                },
-                {
-                    "unit": "dlc2_trader_rebel_super_capital_ship",
-                    "weight": 5.0
                 }
             ]
         },
