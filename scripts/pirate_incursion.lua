@@ -30,7 +30,7 @@ end
 
 local CONFIG = {
     debug_hud = false,
-    wave_interval_seconds = 900.0,
+    wave_interval_seconds = 90.0,
     hyperspace_arrival_delay_seconds = 10.0,
     wave_timer = "incursion_wave_spawn_timer",
     special_operation_kind = "thes_incursion",
@@ -211,10 +211,10 @@ local debug_print
 -- ============================================================
 -- PER-WAVE STRATEGIC CONTROLLER
 --
--- Lua chooses only strategic destinations. Native auto-order AI owns tactical
--- combat inside gravity wells. A wave receives one direct move order to the
--- nearest enemy-owned gravity well. The move may be overridden by native AI at
--- any time so the ships can engage enemies encountered or attacking them.
+-- Lua chooses only strategic route destinations. Native auto-order AI owns
+-- tactical combat and uses the live diplomacy state. Route waypoints are never
+-- treated as proof that their owner is hostile, so alliance changes cannot turn
+-- an allied gravity well into a permanent objective.
 -- ============================================================
 
 local WAVE_GROUPS_BY_INSTANCE = {}
@@ -234,6 +234,7 @@ local function persist_wave_group_state(context, group)
     context.instance[wave_group_state_key(slot, "attacker_player_index")] = group.attacker_player_index
     context.instance[wave_group_state_key(slot, "spawn_well_id")] = group.spawn_well_id
     context.instance[wave_group_state_key(slot, "strategic_target_well_id")] = group.strategic_target_well_id
+    context.instance[wave_group_state_key(slot, "route_cursor_well_id")] = group.route_cursor_well_id
     context.instance[wave_group_state_key(slot, "tracker_name")] = group.tracker_name
 end
 
@@ -259,6 +260,7 @@ local function rebuild_wave_groups_from_instance(context)
                     attacker_player_index = attacker_player_index,
                     spawn_well_id = spawn_well_id,
                     strategic_target_well_id = context.instance[wave_group_state_key(slot, "strategic_target_well_id")],
+                    route_cursor_well_id = context.instance[wave_group_state_key(slot, "route_cursor_well_id")],
                     tracker_name = tracker_name
                 }
             end
@@ -282,119 +284,68 @@ local function get_or_create_wave_tracker(context, group)
     return context:get_or_create_unit_tracker(group.tracker_name)
 end
 
-local function get_enemy_playable_player_indices(context, attacker_player_index)
-    return context.simulation:filter_playable_players(function(player)
+-- Lua deliberately does not classify playable players as enemies. The event API
+-- exposed to this script has no player-alliance query, while native unit AI does
+-- know current attackability. Strategic routing therefore treats other empires'
+-- gravity wells only as route waypoints. engage_any_targets decides dynamically
+-- who is actually hostile, including alliance changes during an incursion.
+local function get_foreign_route_well_ids(context, attacker_player_index)
+    local player_indices = context.simulation:filter_playable_players(function(player)
         return not player.is_npc
             and not player.has_lost
             and player.player_index ~= attacker_player_index
     end)
-end
+    table.sort(player_indices)
 
-local function is_player_index_enemy_to_wave(context, attacker_player_index, other_player_index)
-    if other_player_index == nil or other_player_index == attacker_player_index then return false end
-    local other_player = context.simulation:get_player_by_player_index(other_player_index)
-    return other_player ~= nil and not other_player.is_npc and not other_player.has_lost
-end
+    local home_ids = {}
+    local other_ids = {}
+    local seen = {}
 
-local function get_well_owner_player_index(context, well)
-    if well == nil then return nil end
-    local primary_fixture = context.simulation:get_gravity_well_primary_fixture(well)
-    if primary_fixture == nil then return nil end
-    local owner = context.simulation:get_unit_owner(primary_fixture)
-    return owner ~= nil and owner.player_index or nil
-end
+    for _, player_index in ipairs(player_indices) do
+        local player = context.simulation:get_player_by_player_index(player_index)
+        local owned_wells = context.simulation:get_gravity_wells_owned_by_player_index(player_index)
 
-local function get_sorted_adjacent_well_ids(context, well_id)
-    local adjacent_wells = context.simulation:get_adjacent_gravity_wells_by_id(well_id)
-    if adjacent_wells == nil then return {} end
-
-    local ids = {}
-    for _, well in ipairs(adjacent_wells) do
-        if well ~= nil and well.id ~= nil then ids[#ids + 1] = well.id end
-    end
-    table.sort(ids)
-    return ids
-end
-
--- Build the enemy-owned target set first, then BFS through the actual phase-lane
--- graph. This avoids the broken get_closest_gravity_wells Lua binding and avoids
--- geometric-distance guesses that ignore phase-lane topology.
-local function find_nearest_enemy_owned_well(context, attacker_player_index, source_well_id)
-    if source_well_id == nil or source_well_id == 0 then return nil, nil, nil end
-
-    local target_owner_by_well_id = {}
-    local target_count = 0
-    for _, enemy_player_index in ipairs(get_enemy_playable_player_indices(context, attacker_player_index)) do
-        local owned_wells = context.simulation:get_gravity_wells_owned_by_player_index(enemy_player_index)
-        if owned_wells ~= nil then
+        if owned_wells ~= nil and #owned_wells > 0 then
+            local sorted_wells = {}
             for _, well in ipairs(owned_wells) do
-                if well ~= nil and well.id ~= nil and target_owner_by_well_id[well.id] == nil then
-                    target_owner_by_well_id[well.id] = enemy_player_index
-                    target_count = target_count + 1
+                if well ~= nil and well.id ~= nil then
+                    sorted_wells[#sorted_wells + 1] = well
+                end
+            end
+            table.sort(sorted_wells, function(a, b) return a.id < b.id end)
+
+            local home_well_id = nil
+            if player ~= nil and player.home_planet ~= nil then
+                for _, well in ipairs(sorted_wells) do
+                    local primary_fixture = context.simulation:get_gravity_well_primary_fixture(well)
+                    if primary_fixture ~= nil and primary_fixture.id == player.home_planet.id then
+                        home_well_id = well.id
+                        break
+                    end
+                end
+            end
+
+            -- Visit all other empires' current home worlds before secondary worlds.
+            -- This keeps the strategic route focused without pretending those
+            -- empires are enemies; native AI decides that from live diplomacy.
+            if home_well_id ~= nil and not seen[home_well_id] then
+                seen[home_well_id] = true
+                home_ids[#home_ids + 1] = home_well_id
+            end
+
+            for _, well in ipairs(sorted_wells) do
+                if not seen[well.id] then
+                    seen[well.id] = true
+                    other_ids[#other_ids + 1] = well.id
                 end
             end
         end
     end
-    if target_count == 0 then return nil, nil, nil end
 
-    local queue = { source_well_id }
-    local queue_depth = { 0 }
-    local head = 1
-    local visited = { [source_well_id] = true }
-
-    while head <= #queue do
-        local well_id = queue[head]
-        local depth = queue_depth[head]
-        head = head + 1
-
-        local owner_index = target_owner_by_well_id[well_id]
-        if owner_index ~= nil then
-            return owner_index, well_id, depth
-        end
-
-        for _, adjacent_id in ipairs(get_sorted_adjacent_well_ids(context, well_id)) do
-            if not visited[adjacent_id] then
-                visited[adjacent_id] = true
-                queue[#queue + 1] = adjacent_id
-                queue_depth[#queue_depth + 1] = depth + 1
-            end
-        end
-    end
-
-    return nil, nil, nil
-end
-
-local function gravity_well_contains_playable_enemy_units(context, attacker_player_index, well)
-    if well == nil then return false end
-    for _, enemy_player_index in ipairs(get_enemy_playable_player_indices(context, attacker_player_index)) do
-        if context.simulation:does_gravity_well_contain_player_units_by_player_index(well, enemy_player_index) then
-            return true
-        end
-    end
-    return false
-end
-
--- A strategic target remains active while either the planet is still owned by a
--- living playable enemy or any living playable enemy still has units in the well.
--- The well does NOT have to become owned by the incursion empire. Neutralization
--- is enough once the enemy combat presence has also been removed.
-local function strategic_target_is_active(context, group)
-    local target_well_id = group.strategic_target_well_id
-    if target_well_id == nil then return false end
-
-    local target_well = context.simulation:get_unit_by_id(target_well_id)
-    if target_well == nil then return false end
-
-    local owner_index = get_well_owner_player_index(context, target_well)
-    if is_player_index_enemy_to_wave(context, group.attacker_player_index, owner_index) then
-        return true
-    end
-
-    return gravity_well_contains_playable_enemy_units(
-        context,
-        group.attacker_player_index,
-        target_well
-    )
+    local ordered_ids = {}
+    for _, well_id in ipairs(home_ids) do ordered_ids[#ordered_ids + 1] = well_id end
+    for _, well_id in ipairs(other_ids) do ordered_ids[#ordered_ids + 1] = well_id end
+    return ordered_ids
 end
 
 local function get_first_living_wave_well_id(context, group)
@@ -416,18 +367,16 @@ local function wave_has_living_units(context, group)
     return false
 end
 
-local function issue_wave_strategic_move(context, group, target_well_id, reason)
+local function issue_wave_strategic_move(context, group, target_well_id, reason, clear_orders)
     if target_well_id == nil then return false end
 
     local tracker = get_or_create_wave_tracker(context, group)
     local issued_any = false
     for _, unit_id in ipairs(tracker:get_units()) do
         if context.simulation:does_unit_exist_by_id(unit_id) then
-            -- engage_any_targets is normally set only once at spawn. Reapplying it
-            -- here is intentional only when a strategic order is (re)issued.
             context.simulation:set_unit_auto_order_mode_by_id(unit_id, "engage_any_targets")
             local success = context.simulation:issue_move_order_by_id(unit_id, target_well_id, {
-                clear_orders = true,
+                clear_orders = clear_orders == true,
                 ai_override = "anytime"
             })
             if success then issued_any = true end
@@ -436,8 +385,6 @@ local function issue_wave_strategic_move(context, group, target_well_id, reason)
 
     if issued_any then
         group.last_order_time = context.simulation.current_time
-        group.last_progress_time = context.simulation.current_time
-        group.last_recovery_signature = nil
         debug_print("strategic move " .. tostring(group.tracker_name)
             .. " -> well " .. tostring(target_well_id)
             .. " | " .. tostring(reason or "order"))
@@ -445,120 +392,115 @@ local function issue_wave_strategic_move(context, group, target_well_id, reason)
     return issued_any
 end
 
-local function assign_new_strategic_target(context, group, source_well_id)
-    if source_well_id == nil or source_well_id == 0 then
-        source_well_id = group.spawn_well_id
-    end
+-- Select the next stable route waypoint without making any diplomatic assumption.
+-- The cursor prevents the old "nearest other player" logic from selecting the well
+-- the wave is already sitting in, and also prevents two nearby allied wells from
+-- becoming a permanent bounce pair. When there is only one foreign-owned well,
+-- the route goes back to the wave's spawn well before visiting it again.
+local function select_next_route_waypoint(context, group, current_well_id)
+    local route_well_ids = get_foreign_route_well_ids(context, group.attacker_player_index)
+    local cursor = group.route_cursor_well_id
 
-    local target_player_index, target_well_id, distance = find_nearest_enemy_owned_well(
-        context,
-        group.attacker_player_index,
-        source_well_id
-    )
+    if #route_well_ids > 0 then
+        local start_index = 1
 
-    group.strategic_target_well_id = target_well_id
-    group.next_target_search_time = nil
-    group.last_progress_time = context.simulation.current_time
-    group.last_recovery_signature = nil
-    persist_wave_group_state(context, group)
-
-    if target_well_id == nil then
-        group.next_target_search_time = context.simulation.current_time + CONFIG.target_search_retry_seconds
-        debug_print("no enemy-owned gravity well for " .. tostring(group.tracker_name))
-        return false
-    end
-
-    debug_print("strategic target " .. tostring(group.tracker_name)
-        .. " | player " .. tostring(target_player_index)
-        .. " | well " .. tostring(target_well_id)
-        .. " | jumps " .. tostring(distance or 0))
-
-    -- If the target is the well the wave is already in, native engage_any_targets
-    -- owns the battle; no local movement order is required.
-    if source_well_id == target_well_id then return true end
-    return issue_wave_strategic_move(context, group, target_well_id, "new target")
-end
-
-local function build_recovery_signature(context, group)
-    local tracker = get_or_create_wave_tracker(context, group)
-    local sampled = {}
-    local occupied_well_ids = {}
-    local occupied_seen = {}
-
-    for _, unit_id in ipairs(tracker:get_units()) do
-        if context.simulation:does_unit_exist_by_id(unit_id) then
-            local well_id = context.simulation:get_unit_current_gravity_well_id(unit_id)
-            if well_id ~= nil and well_id ~= 0 then
-                if not occupied_seen[well_id] then
-                    occupied_seen[well_id] = true
-                    occupied_well_ids[#occupied_well_ids + 1] = well_id
+        if cursor ~= nil then
+            local found_cursor = false
+            for index, well_id in ipairs(route_well_ids) do
+                if well_id == cursor then
+                    start_index = (index % #route_well_ids) + 1
+                    found_cursor = true
+                    break
                 end
-                if #sampled < CONFIG.recovery_sample_size then
-                    sampled[#sampled + 1] = tostring(unit_id) .. "@" .. tostring(well_id)
+            end
+
+            if not found_cursor then
+                for index, well_id in ipairs(route_well_ids) do
+                    if well_id > cursor then
+                        start_index = index
+                        found_cursor = true
+                        break
+                    end
                 end
+                if not found_cursor then start_index = 1 end
+            end
+        end
+
+        for offset = 0, #route_well_ids - 1 do
+            local index = ((start_index + offset - 1) % #route_well_ids) + 1
+            local well_id = route_well_ids[index]
+            if well_id ~= current_well_id then
+                return well_id, true
             end
         end
     end
 
-    table.sort(sampled)
-    table.sort(occupied_well_ids)
-    return table.concat(sampled, ","), occupied_well_ids
+    if group.spawn_well_id ~= nil
+        and group.spawn_well_id ~= 0
+        and group.spawn_well_id ~= current_well_id
+        and context.simulation:does_unit_exist_by_id(group.spawn_well_id)
+    then
+        return group.spawn_well_id, false
+    end
+
+    return nil, false
 end
 
-local function any_occupied_well_has_playable_enemies(context, group, occupied_well_ids)
-    for _, well_id in ipairs(occupied_well_ids or {}) do
-        local well = context.simulation:get_unit_by_id(well_id)
-        if well ~= nil and gravity_well_contains_playable_enemy_units(
-            context,
-            group.attacker_player_index,
-            well
-        ) then
-            return true
-        end
-    end
-    return false
-end
-
--- This is deliberately the only stuck recovery. It runs at most once per timeout,
--- samples only a few ships, and never runs while any sampled wave-occupied well has
--- playable enemies. Its sole action is to reissue the existing strategic target.
-local function update_strategic_recovery(context, group)
-    if group.strategic_target_well_id == nil then return end
-
-    local now = context.simulation.current_time
-    if group.next_recovery_check_time ~= nil and now < group.next_recovery_check_time then return end
-    group.next_recovery_check_time = now + CONFIG.strategic_recovery_timeout_seconds
-
-    local signature, occupied_well_ids = build_recovery_signature(context, group)
-    if signature == "" then return end
-
-    if group.last_recovery_signature ~= signature then
-        group.last_recovery_signature = signature
-        group.last_progress_time = now
-        return
+local function assign_next_route_target(context, group, current_well_id, reason, clear_orders)
+    if current_well_id == nil or current_well_id == 0 then
+        current_well_id = group.spawn_well_id
     end
 
-    local last_progress = group.last_progress_time or now
-    if now - last_progress < CONFIG.strategic_recovery_timeout_seconds then return end
-
-    if any_occupied_well_has_playable_enemies(context, group, occupied_well_ids) then
-        group.last_progress_time = now
-        return
-    end
-
-    local reference_well_id = get_first_living_wave_well_id(context, group)
-    if reference_well_id == group.strategic_target_well_id then
-        -- At the objective native AI owns planet/fleet combat; never spam movement
-        -- orders inside the target gravity well.
-        group.last_progress_time = now
-        return
-    end
-
-    issue_wave_strategic_move(
+    local target_well_id, is_foreign_waypoint = select_next_route_waypoint(
         context,
         group,
-        group.strategic_target_well_id,
-        "60s no inter-well progress"
+        current_well_id
+    )
+
+    group.strategic_target_well_id = target_well_id
+    group.next_target_search_time = nil
+    persist_wave_group_state(context, group)
+
+    if target_well_id == nil then
+        group.next_target_search_time = context.simulation.current_time + CONFIG.target_search_retry_seconds
+        debug_print("no foreign route waypoint for " .. tostring(group.tracker_name))
+        return false
+    end
+
+    debug_print("strategic route target " .. tostring(group.tracker_name)
+        .. " | well " .. tostring(target_well_id)
+        .. (is_foreign_waypoint and " | foreign waypoint" or " | return waypoint"))
+
+    if current_well_id == target_well_id then return true end
+
+    return issue_wave_strategic_move(
+        context,
+        group,
+        target_well_id,
+        reason or "route target",
+        clear_orders
+    )
+end
+
+-- A route waypoint is complete as soon as the wave reaches it. Lua does not wait
+-- for ownership changes or attempt to decide whether the owner is an ally/enemy.
+-- If attackable enemies are present, native engage_any_targets overrides the
+-- queued move and fights them; after combat the queued strategic route continues.
+local function advance_route_if_waypoint_reached(context, group, current_well_id)
+    local target_well_id = group.strategic_target_well_id
+    if target_well_id == nil or current_well_id == nil then return false end
+    if current_well_id ~= target_well_id then return false end
+
+    if target_well_id ~= group.spawn_well_id then
+        group.route_cursor_well_id = target_well_id
+    end
+
+    return assign_next_route_target(
+        context,
+        group,
+        current_well_id,
+        "next route waypoint",
+        false
     )
 end
 
@@ -955,20 +897,22 @@ local function spawn_wave_for_player(context, player_index, player, faction, wav
     local spawn_well = get_home_gravity_well(context, player_index)
     if spawn_well == nil then return false end
 
-    local target_player_index, strategic_target_well_id, target_distance = find_nearest_enemy_owned_well(
-        context,
-        player_index,
-        spawn_well.id
-    )
-    if strategic_target_well_id == nil then return false end
-
     local group = {
         attacker_player_index = player_index,
         spawn_well_id = spawn_well.id,
-        strategic_target_well_id = strategic_target_well_id,
+        strategic_target_well_id = nil,
+        route_cursor_well_id = nil,
         tracker_name = "incursion_wave_" .. tostring(context.instance_id)
             .. "_" .. tostring(player_index) .. "_" .. tostring(wave_number)
     }
+
+    local strategic_target_well_id = select_next_route_waypoint(
+        context,
+        group,
+        spawn_well.id
+    )
+    if strategic_target_well_id == nil then return false end
+    group.strategic_target_well_id = strategic_target_well_id
 
     local planned = build_wave_spawn_plan(context, faction, game_time, balance)
     local wave_unit_ids = spawn_planned_wave(
@@ -992,13 +936,17 @@ local function spawn_wave_for_player(context, player_index, player, faction, wav
     persist_wave_group_state(context, group)
     wave_groups[#wave_groups + 1] = group
 
-    debug_print("initial strategic target " .. tostring(group.tracker_name)
-        .. " | player " .. tostring(target_player_index)
-        .. " | well " .. tostring(strategic_target_well_id)
-        .. " | jumps " .. tostring(target_distance or 0))
+    debug_print("initial strategic route target " .. tostring(group.tracker_name)
+        .. " | well " .. tostring(strategic_target_well_id))
 
     if spawn_well.id ~= strategic_target_well_id then
-        if not issue_wave_strategic_move(context, group, strategic_target_well_id, "initial target") then
+        if not issue_wave_strategic_move(
+            context,
+            group,
+            strategic_target_well_id,
+            "initial route target",
+            true
+        ) then
             debug_print("initial strategic move failed for " .. tostring(group.tracker_name))
         end
     end
@@ -1092,15 +1040,27 @@ local function update_wave_group(context, group)
         return false
     end
 
-    if not strategic_target_is_active(context, group) then
+    local current_well_id = get_first_living_wave_well_id(context, group)
+
+    if group.strategic_target_well_id == nil
+        or not context.simulation:does_unit_exist_by_id(group.strategic_target_well_id)
+    then
         if group.next_target_search_time == nil or now >= group.next_target_search_time then
-            local source_well_id = get_first_living_wave_well_id(context, group)
-            assign_new_strategic_target(context, group, source_well_id)
+            assign_next_route_target(
+                context,
+                group,
+                current_well_id,
+                "replacement route target",
+                false
+            )
         end
         return true
     end
 
-    update_strategic_recovery(context, group)
+    -- Reaching a waypoint always advances the route. Diplomacy is intentionally
+    -- left to native engage_any_targets, so allied wells can never become a
+    -- permanent Lua objective and alliance changes require no cached refresh.
+    advance_route_if_waypoint_reached(context, group, current_well_id)
     return true
 end
 
