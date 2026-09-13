@@ -33,12 +33,13 @@ local CONFIG = {
     wave_interval_seconds = 900.0,
     hyperspace_arrival_delay_seconds = 10.0,
     wave_timer = "incursion_wave_spawn_timer",
-    special_operation_kind = "trade_escort",
+    special_operation_kind = "thes_incursion",
 
-    -- Low-cost group stuck watchdog. Checks only two living ships per wave.
-    stuck_check_interval_seconds = 15.0,
-    stuck_timeout_seconds = 60.0,
-    stuck_sample_size = 2,
+    -- Strategic controller only. Native unit AI owns all tactical combat.
+    strategic_update_interval_seconds = 5.0,
+    strategic_recovery_timeout_seconds = 60.0,
+    target_search_retry_seconds = 30.0,
+    recovery_sample_size = 3,
 
     supply_start = 100,
     supply_end = 2400,
@@ -204,36 +205,370 @@ local CONFIG = {
 }
 
 
--- Lua-side per-instance wave state.
--- Do not store nested Lua tables in context.instance; the event-state proxy only
--- reliably persists scalar values.
+
+local debug_print
+
+-- ============================================================
+-- PER-WAVE STRATEGIC CONTROLLER
+--
+-- Lua chooses only strategic destinations. Native auto-order AI owns tactical
+-- combat inside gravity wells. A wave receives one direct move order to the
+-- nearest enemy-owned gravity well. The move may be overridden by native AI at
+-- any time so the ships can engage enemies encountered or attacking them.
+-- ============================================================
+
 local WAVE_GROUPS_BY_INSTANCE = {}
+
+local function wave_group_state_key(slot, field)
+    return "wave_group_" .. tostring(slot) .. "_" .. tostring(field)
+end
+
+local function persist_wave_group_state(context, group)
+    if group.state_slot == nil then
+        context.instance.wave_group_count = (context.instance.wave_group_count or 0) + 1
+        group.state_slot = context.instance.wave_group_count
+    end
+
+    local slot = group.state_slot
+    context.instance[wave_group_state_key(slot, "active")] = true
+    context.instance[wave_group_state_key(slot, "attacker_player_index")] = group.attacker_player_index
+    context.instance[wave_group_state_key(slot, "spawn_well_id")] = group.spawn_well_id
+    context.instance[wave_group_state_key(slot, "strategic_target_well_id")] = group.strategic_target_well_id
+    context.instance[wave_group_state_key(slot, "tracker_name")] = group.tracker_name
+end
+
+local function deactivate_wave_group_state(context, group)
+    if group.state_slot ~= nil then
+        context.instance[wave_group_state_key(group.state_slot, "active")] = false
+    end
+end
+
+local function rebuild_wave_groups_from_instance(context)
+    local groups = {}
+    local group_count = context.instance.wave_group_count or 0
+
+    for slot = 1, group_count do
+        if context.instance[wave_group_state_key(slot, "active")] == true then
+            local tracker_name = context.instance[wave_group_state_key(slot, "tracker_name")]
+            local attacker_player_index = context.instance[wave_group_state_key(slot, "attacker_player_index")]
+            local spawn_well_id = context.instance[wave_group_state_key(slot, "spawn_well_id")]
+
+            if tracker_name ~= nil and attacker_player_index ~= nil and spawn_well_id ~= nil then
+                groups[#groups + 1] = {
+                    state_slot = slot,
+                    attacker_player_index = attacker_player_index,
+                    spawn_well_id = spawn_well_id,
+                    strategic_target_well_id = context.instance[wave_group_state_key(slot, "strategic_target_well_id")],
+                    tracker_name = tracker_name
+                }
+            end
+        end
+    end
+
+    return groups
+end
 
 local function get_wave_groups(context)
     local instance_id = context.instance_id
     local groups = WAVE_GROUPS_BY_INSTANCE[instance_id]
     if groups == nil then
-        groups = {}
+        groups = rebuild_wave_groups_from_instance(context)
         WAVE_GROUPS_BY_INSTANCE[instance_id] = groups
     end
     return groups
 end
 
-local function debug_print(message)
+local function get_or_create_wave_tracker(context, group)
+    return context:get_or_create_unit_tracker(group.tracker_name)
+end
+
+local function get_enemy_playable_player_indices(context, attacker_player_index)
+    return context.simulation:filter_playable_players(function(player)
+        return not player.is_npc
+            and not player.has_lost
+            and player.player_index ~= attacker_player_index
+    end)
+end
+
+local function is_player_index_enemy_to_wave(context, attacker_player_index, other_player_index)
+    if other_player_index == nil or other_player_index == attacker_player_index then return false end
+    local other_player = context.simulation:get_player_by_player_index(other_player_index)
+    return other_player ~= nil and not other_player.is_npc and not other_player.has_lost
+end
+
+local function get_well_owner_player_index(context, well)
+    if well == nil then return nil end
+    local primary_fixture = context.simulation:get_gravity_well_primary_fixture(well)
+    if primary_fixture == nil then return nil end
+    local owner = context.simulation:get_unit_owner(primary_fixture)
+    return owner ~= nil and owner.player_index or nil
+end
+
+local function get_sorted_adjacent_well_ids(context, well_id)
+    local adjacent_wells = context.simulation:get_adjacent_gravity_wells_by_id(well_id)
+    if adjacent_wells == nil then return {} end
+
+    local ids = {}
+    for _, well in ipairs(adjacent_wells) do
+        if well ~= nil and well.id ~= nil then ids[#ids + 1] = well.id end
+    end
+    table.sort(ids)
+    return ids
+end
+
+-- Build the enemy-owned target set first, then BFS through the actual phase-lane
+-- graph. This avoids the broken get_closest_gravity_wells Lua binding and avoids
+-- geometric-distance guesses that ignore phase-lane topology.
+local function find_nearest_enemy_owned_well(context, attacker_player_index, source_well_id)
+    if source_well_id == nil or source_well_id == 0 then return nil, nil, nil end
+
+    local target_owner_by_well_id = {}
+    local target_count = 0
+    for _, enemy_player_index in ipairs(get_enemy_playable_player_indices(context, attacker_player_index)) do
+        local owned_wells = context.simulation:get_gravity_wells_owned_by_player_index(enemy_player_index)
+        if owned_wells ~= nil then
+            for _, well in ipairs(owned_wells) do
+                if well ~= nil and well.id ~= nil and target_owner_by_well_id[well.id] == nil then
+                    target_owner_by_well_id[well.id] = enemy_player_index
+                    target_count = target_count + 1
+                end
+            end
+        end
+    end
+    if target_count == 0 then return nil, nil, nil end
+
+    local queue = { source_well_id }
+    local queue_depth = { 0 }
+    local head = 1
+    local visited = { [source_well_id] = true }
+
+    while head <= #queue do
+        local well_id = queue[head]
+        local depth = queue_depth[head]
+        head = head + 1
+
+        local owner_index = target_owner_by_well_id[well_id]
+        if owner_index ~= nil then
+            return owner_index, well_id, depth
+        end
+
+        for _, adjacent_id in ipairs(get_sorted_adjacent_well_ids(context, well_id)) do
+            if not visited[adjacent_id] then
+                visited[adjacent_id] = true
+                queue[#queue + 1] = adjacent_id
+                queue_depth[#queue_depth + 1] = depth + 1
+            end
+        end
+    end
+
+    return nil, nil, nil
+end
+
+local function gravity_well_contains_playable_enemy_units(context, attacker_player_index, well)
+    if well == nil then return false end
+    for _, enemy_player_index in ipairs(get_enemy_playable_player_indices(context, attacker_player_index)) do
+        if context.simulation:does_gravity_well_contain_player_units_by_player_index(well, enemy_player_index) then
+            return true
+        end
+    end
+    return false
+end
+
+-- A strategic target remains active while either the planet is still owned by a
+-- living playable enemy or any living playable enemy still has units in the well.
+-- The well does NOT have to become owned by the incursion empire. Neutralization
+-- is enough once the enemy combat presence has also been removed.
+local function strategic_target_is_active(context, group)
+    local target_well_id = group.strategic_target_well_id
+    if target_well_id == nil then return false end
+
+    local target_well = context.simulation:get_unit_by_id(target_well_id)
+    if target_well == nil then return false end
+
+    local owner_index = get_well_owner_player_index(context, target_well)
+    if is_player_index_enemy_to_wave(context, group.attacker_player_index, owner_index) then
+        return true
+    end
+
+    return gravity_well_contains_playable_enemy_units(
+        context,
+        group.attacker_player_index,
+        target_well
+    )
+end
+
+local function get_first_living_wave_well_id(context, group)
+    local tracker = get_or_create_wave_tracker(context, group)
+    for _, unit_id in ipairs(tracker:get_units()) do
+        if context.simulation:does_unit_exist_by_id(unit_id) then
+            local well_id = context.simulation:get_unit_current_gravity_well_id(unit_id)
+            if well_id ~= nil and well_id ~= 0 then return well_id end
+        end
+    end
+    return nil
+end
+
+local function wave_has_living_units(context, group)
+    local tracker = get_or_create_wave_tracker(context, group)
+    for _, unit_id in ipairs(tracker:get_units()) do
+        if context.simulation:does_unit_exist_by_id(unit_id) then return true end
+    end
+    return false
+end
+
+local function issue_wave_strategic_move(context, group, target_well_id, reason)
+    if target_well_id == nil then return false end
+
+    local tracker = get_or_create_wave_tracker(context, group)
+    local issued_any = false
+    for _, unit_id in ipairs(tracker:get_units()) do
+        if context.simulation:does_unit_exist_by_id(unit_id) then
+            -- engage_any_targets is normally set only once at spawn. Reapplying it
+            -- here is intentional only when a strategic order is (re)issued.
+            context.simulation:set_unit_auto_order_mode_by_id(unit_id, "engage_any_targets")
+            local success = context.simulation:issue_move_order_by_id(unit_id, target_well_id, {
+                clear_orders = true,
+                ai_override = "anytime"
+            })
+            if success then issued_any = true end
+        end
+    end
+
+    if issued_any then
+        group.last_order_time = context.simulation.current_time
+        group.last_progress_time = context.simulation.current_time
+        group.last_recovery_signature = nil
+        debug_print("strategic move " .. tostring(group.tracker_name)
+            .. " -> well " .. tostring(target_well_id)
+            .. " | " .. tostring(reason or "order"))
+    end
+    return issued_any
+end
+
+local function assign_new_strategic_target(context, group, source_well_id)
+    if source_well_id == nil or source_well_id == 0 then
+        source_well_id = group.spawn_well_id
+    end
+
+    local target_player_index, target_well_id, distance = find_nearest_enemy_owned_well(
+        context,
+        group.attacker_player_index,
+        source_well_id
+    )
+
+    group.strategic_target_well_id = target_well_id
+    group.next_target_search_time = nil
+    group.last_progress_time = context.simulation.current_time
+    group.last_recovery_signature = nil
+    persist_wave_group_state(context, group)
+
+    if target_well_id == nil then
+        group.next_target_search_time = context.simulation.current_time + CONFIG.target_search_retry_seconds
+        debug_print("no enemy-owned gravity well for " .. tostring(group.tracker_name))
+        return false
+    end
+
+    debug_print("strategic target " .. tostring(group.tracker_name)
+        .. " | player " .. tostring(target_player_index)
+        .. " | well " .. tostring(target_well_id)
+        .. " | jumps " .. tostring(distance or 0))
+
+    -- If the target is the well the wave is already in, native engage_any_targets
+    -- owns the battle; no local movement order is required.
+    if source_well_id == target_well_id then return true end
+    return issue_wave_strategic_move(context, group, target_well_id, "new target")
+end
+
+local function build_recovery_signature(context, group)
+    local tracker = get_or_create_wave_tracker(context, group)
+    local sampled = {}
+    local occupied_well_ids = {}
+    local occupied_seen = {}
+
+    for _, unit_id in ipairs(tracker:get_units()) do
+        if context.simulation:does_unit_exist_by_id(unit_id) then
+            local well_id = context.simulation:get_unit_current_gravity_well_id(unit_id)
+            if well_id ~= nil and well_id ~= 0 then
+                if not occupied_seen[well_id] then
+                    occupied_seen[well_id] = true
+                    occupied_well_ids[#occupied_well_ids + 1] = well_id
+                end
+                if #sampled < CONFIG.recovery_sample_size then
+                    sampled[#sampled + 1] = tostring(unit_id) .. "@" .. tostring(well_id)
+                end
+            end
+        end
+    end
+
+    table.sort(sampled)
+    table.sort(occupied_well_ids)
+    return table.concat(sampled, ","), occupied_well_ids
+end
+
+local function any_occupied_well_has_playable_enemies(context, group, occupied_well_ids)
+    for _, well_id in ipairs(occupied_well_ids or {}) do
+        local well = context.simulation:get_unit_by_id(well_id)
+        if well ~= nil and gravity_well_contains_playable_enemy_units(
+            context,
+            group.attacker_player_index,
+            well
+        ) then
+            return true
+        end
+    end
+    return false
+end
+
+-- This is deliberately the only stuck recovery. It runs at most once per timeout,
+-- samples only a few ships, and never runs while any sampled wave-occupied well has
+-- playable enemies. Its sole action is to reissue the existing strategic target.
+local function update_strategic_recovery(context, group)
+    if group.strategic_target_well_id == nil then return end
+
+    local now = context.simulation.current_time
+    if group.next_recovery_check_time ~= nil and now < group.next_recovery_check_time then return end
+    group.next_recovery_check_time = now + CONFIG.strategic_recovery_timeout_seconds
+
+    local signature, occupied_well_ids = build_recovery_signature(context, group)
+    if signature == "" then return end
+
+    if group.last_recovery_signature ~= signature then
+        group.last_recovery_signature = signature
+        group.last_progress_time = now
+        return
+    end
+
+    local last_progress = group.last_progress_time or now
+    if now - last_progress < CONFIG.strategic_recovery_timeout_seconds then return end
+
+    if any_occupied_well_has_playable_enemies(context, group, occupied_well_ids) then
+        group.last_progress_time = now
+        return
+    end
+
+    local reference_well_id = get_first_living_wave_well_id(context, group)
+    if reference_well_id == group.strategic_target_well_id then
+        -- At the objective native AI owns planet/fleet combat; never spam movement
+        -- orders inside the target gravity well.
+        group.last_progress_time = now
+        return
+    end
+
+    issue_wave_strategic_move(
+        context,
+        group,
+        group.strategic_target_well_id,
+        "60s no inter-well progress"
+    )
+end
+
+debug_print = function(message)
     print("[faction_wave_test] " .. tostring(message))
 end
 
 local function set_status(context, text)
     context.instance.status_text = tostring(text or "")
     debug_print(context.instance.status_text)
-end
-
-local function player_state_key(prefix, player_index)
-    return prefix .. tostring(player_index)
-end
-
-local function recent_unit_key(player_index, slot)
-    return "recent_unit_" .. tostring(player_index) .. "_" .. tostring(slot)
 end
 
 local function get_faction_definition(race)
@@ -365,332 +700,6 @@ local function get_home_gravity_well(context, player_index)
     return owned_wells[1]
 end
 
-local function find_target_player_index(context, attacker_player_index, excluded_target_player_index)
-    local eligible_indices = context.simulation:filter_playable_players(function(player)
-        return not player.is_npc
-            and not player.has_lost
-            and player.player_index ~= attacker_player_index
-            and player.player_index ~= excluded_target_player_index
-    end)
-    local best_player_index = nil
-    local best_score = -1
-    for _, player_index in ipairs(eligible_indices) do
-        local player = context.simulation:get_player_by_player_index(player_index)
-        if player ~= nil then
-            local score = player.economic_score or 0
-            if score > best_score then
-                best_score = score
-                best_player_index = player_index
-            end
-        end
-    end
-    return best_player_index
-end
-
-local function squared_distance_between_units(context, a, b)
-    if a == nil or b == nil then return nil end
-    local a_pos = context.simulation:get_unit_position(a)
-    local b_pos = context.simulation:get_unit_position(b)
-    if a_pos == nil or b_pos == nil then return nil end
-    local dx = a_pos.x - b_pos.x
-    local dy = a_pos.y - b_pos.y
-    local dz = a_pos.z - b_pos.z
-    return (dx * dx) + (dy * dy) + (dz * dz)
-end
-
-local function select_target_well(context, target_player_index, source_well)
-    local target_wells = context.simulation:get_gravity_wells_owned_by_player_index(target_player_index)
-    if target_wells == nil or #target_wells == 0 then return nil end
-    if source_well == nil then return target_wells[1] end
-
-    local best_well = nil
-    local best_distance = nil
-    for _, well in ipairs(target_wells) do
-        local distance = squared_distance_between_units(context, source_well, well)
-        if distance ~= nil and (best_distance == nil or distance < best_distance) then
-            best_distance = distance
-            best_well = well
-        end
-    end
-    return best_well or target_wells[1]
-end
-
-local function clear_target_for_player(context, attacker_player_index)
-    context.instance[player_state_key("target_player_", attacker_player_index)] = nil
-    context.instance[player_state_key("target_well_", attacker_player_index)] = nil
-    context.instance[player_state_key("blocking_well_", attacker_player_index)] = nil
-    context.instance[player_state_key("blocking_requires_conquest_", attacker_player_index)] = nil
-end
-
--- The enemy home/capital is the persistent strategic destination.
--- ============================================================
--- PER-WAVE MOVEMENT / TARGETING
--- One spawned wave is one script-side group.
--- ============================================================
-
-local function get_enemy_playable_player_indices(context, attacker_player_index)
-    return context.simulation:filter_playable_players(function(player)
-        return not player.is_npc
-            and not player.has_lost
-            and player.player_index ~= attacker_player_index
-    end)
-end
-
-local function is_player_index_enemy_to_wave(context, attacker_player_index, other_player_index)
-    if other_player_index == nil or other_player_index == attacker_player_index then return false end
-    local other_player = context.simulation:get_player_by_player_index(other_player_index)
-    return other_player ~= nil and not other_player.is_npc and not other_player.has_lost
-end
-
-local function get_well_owner_player_index(context, well)
-    if well == nil then return nil end
-    local primary_fixture = context.simulation:get_gravity_well_primary_fixture(well)
-    if primary_fixture == nil then return nil end
-    local owner = context.simulation:get_unit_owner(primary_fixture)
-    return owner ~= nil and owner.player_index or nil
-end
-
-local function find_nearest_enemy_planet_well(context, attacker_player_index, source_well)
-    local best_well = nil
-    local best_distance = nil
-
-    for _, enemy_player_index in ipairs(get_enemy_playable_player_indices(context, attacker_player_index)) do
-        local owned_wells = context.simulation:get_gravity_wells_owned_by_player_index(enemy_player_index)
-        if owned_wells ~= nil then
-            for _, well in ipairs(owned_wells) do
-                if source_well == nil then
-                    return well
-                end
-                local distance = squared_distance_between_units(context, source_well, well)
-                if distance ~= nil and (best_distance == nil or distance < best_distance) then
-                    best_distance = distance
-                    best_well = well
-                end
-            end
-        end
-    end
-
-    return best_well
-end
-
-local function is_well_hostile_to_wave(context, attacker_player_index, well)
-    if well == nil then return false, false end
-    local owner_index = get_well_owner_player_index(context, well)
-    local hostile_owner = is_player_index_enemy_to_wave(context, attacker_player_index, owner_index)
-    local hostile_units = false
-    for _, enemy_player_index in ipairs(get_enemy_playable_player_indices(context, attacker_player_index)) do
-        if context.simulation:does_gravity_well_contain_player_units_by_player_index(well, enemy_player_index) then
-            hostile_units = true
-            break
-        end
-    end
-    return hostile_owner or hostile_units, hostile_owner
-end
-
-local function is_blocking_well_finished(context, group, well)
-    if well == nil then return true end
-    for _, enemy_player_index in ipairs(get_enemy_playable_player_indices(context, group.attacker_player_index)) do
-        if context.simulation:does_gravity_well_contain_player_units_by_player_index(well, enemy_player_index) then
-            return false
-        end
-    end
-    if group.blocking_requires_conquest then
-        return get_well_owner_player_index(context, well) == group.attacker_player_index
-    end
-    return true
-end
-
-local function get_or_create_wave_tracker(context, group)
-    return context:get_or_create_unit_tracker(group.tracker_name)
-end
-
-local function set_wave_units_auto_combat(context, group)
-    local tracker = get_or_create_wave_tracker(context, group)
-    for _, unit_id in ipairs(tracker:get_units()) do
-        if context.simulation:does_unit_exist_by_id(unit_id) then
-            context.simulation:set_unit_auto_order_mode_by_id(unit_id, "engage_any_targets")
-        end
-    end
-end
-
-local function issue_wave_group_move(context, group, target_well_id)
-    if target_well_id == nil then return false end
-    local tracker = get_or_create_wave_tracker(context, group)
-    if tracker:count() <= 0 then return false end
-
-    local issued_any = false
-    for _, unit_id in ipairs(tracker:get_units()) do
-        if context.simulation:does_unit_exist_by_id(unit_id) then
-            context.simulation:set_unit_auto_order_mode_by_id(unit_id, "engage_any_targets")
-            local success = context.simulation:issue_move_order_by_id(unit_id, target_well_id, {
-                clear_orders = true,
-                ai_override = "anytime"
-            })
-            if success then
-                issued_any = true
-            end
-        end
-    end
-
-    if issued_any then
-        group.last_order_well_id = target_well_id
-    end
-    return issued_any
-end
-
-local function reset_group_stuck_watchdog(group, now)
-    group.stuck_watchdog_next_check = now + CONFIG.stuck_check_interval_seconds
-    group.stuck_watchdog_stable_since = nil
-    group.stuck_watchdog_sample_unit_1 = nil
-    group.stuck_watchdog_sample_well_1 = nil
-    group.stuck_watchdog_sample_unit_2 = nil
-    group.stuck_watchdog_sample_well_2 = nil
-end
-
-local function update_group_stuck_watchdog(context, group)
-    local now = context.simulation.current_time
-
-    if group.stuck_watchdog_next_check ~= nil and now < group.stuck_watchdog_next_check then
-        return false
-    end
-    group.stuck_watchdog_next_check = now + CONFIG.stuck_check_interval_seconds
-
-    -- Blocking combat/conquest is an intentional stop, never a stuck condition.
-    if group.blocking_well_id ~= nil or group.strategic_target_well_id == nil then
-        reset_group_stuck_watchdog(group, now)
-        return false
-    end
-
-    local tracker = get_or_create_wave_tracker(context, group)
-    local sample_units = {}
-    local sample_wells = {}
-
-    for _, unit_id in ipairs(tracker:get_units()) do
-        if context.simulation:does_unit_exist_by_id(unit_id) then
-            local well_id = context.simulation:get_unit_current_gravity_well_id(unit_id)
-            if well_id ~= nil and well_id ~= 0 then
-                sample_units[#sample_units + 1] = unit_id
-                sample_wells[#sample_wells + 1] = well_id
-                if #sample_units >= CONFIG.stuck_sample_size then
-                    break
-                end
-            end
-        end
-    end
-
-    if #sample_units == 0 then
-        reset_group_stuck_watchdog(group, now)
-        return false
-    end
-
-    -- Reaching the strategic target is progress, not a stuck condition.
-    for _, well_id in ipairs(sample_wells) do
-        if well_id == group.strategic_target_well_id then
-            reset_group_stuck_watchdog(group, now)
-            return false
-        end
-    end
-
-    local same_sample =
-        group.stuck_watchdog_sample_unit_1 == sample_units[1]
-        and group.stuck_watchdog_sample_well_1 == sample_wells[1]
-        and group.stuck_watchdog_sample_unit_2 == sample_units[2]
-        and group.stuck_watchdog_sample_well_2 == sample_wells[2]
-
-    if not same_sample then
-        group.stuck_watchdog_sample_unit_1 = sample_units[1]
-        group.stuck_watchdog_sample_well_1 = sample_wells[1]
-        group.stuck_watchdog_sample_unit_2 = sample_units[2]
-        group.stuck_watchdog_sample_well_2 = sample_wells[2]
-        group.stuck_watchdog_stable_since = now
-        return false
-    end
-
-    if group.stuck_watchdog_stable_since == nil then
-        group.stuck_watchdog_stable_since = now
-        return false
-    end
-
-    if now - group.stuck_watchdog_stable_since >= CONFIG.stuck_timeout_seconds then
-        local recovered = issue_wave_group_move(context, group, group.strategic_target_well_id)
-        group.stuck_watchdog_stable_since = now
-        return recovered
-    end
-
-    return false
-end
-
-local function find_wave_reference_well(context, group)
-    local tracker = get_or_create_wave_tracker(context, group)
-    for _, unit_id in ipairs(tracker:get_units()) do
-        if context.simulation:does_unit_exist_by_id(unit_id) then
-            local well_id = context.simulation:get_unit_current_gravity_well_id(unit_id)
-            if well_id ~= nil and well_id ~= 0 then
-                return context.simulation:get_unit_by_id(well_id)
-            end
-        end
-    end
-    return nil
-end
-
-local function find_hostile_well_encountered_by_wave(context, group)
-    local tracker = get_or_create_wave_tracker(context, group)
-    for _, unit_id in ipairs(tracker:get_units()) do
-        if context.simulation:does_unit_exist_by_id(unit_id) then
-            local current_well_id = context.simulation:get_unit_current_gravity_well_id(unit_id)
-            if current_well_id ~= nil and current_well_id ~= 0 then
-                local current_well = context.simulation:get_unit_by_id(current_well_id)
-                if current_well ~= nil then
-                    local hostile, hostile_owner = is_well_hostile_to_wave(context, group.attacker_player_index, current_well)
-                    if hostile then return current_well_id, hostile_owner end
-                end
-            end
-        end
-    end
-    return nil, false
-end
-
-local function wave_target_is_still_enemy_owned(context, group)
-    if group.strategic_target_well_id == nil then return false end
-    local target_well = context.simulation:get_unit_by_id(group.strategic_target_well_id)
-    if target_well == nil then return false end
-    return is_player_index_enemy_to_wave(
-        context,
-        group.attacker_player_index,
-        get_well_owner_player_index(context, target_well)
-    )
-end
-
-local function assign_new_nearest_enemy_target(context, group)
-    local source_well = find_wave_reference_well(context, group)
-    if source_well == nil then source_well = context.simulation:get_unit_by_id(group.spawn_well_id) end
-    local target_well = find_nearest_enemy_planet_well(context, group.attacker_player_index, source_well)
-    group.strategic_target_well_id = target_well ~= nil and target_well.id or nil
-    group.blocking_well_id = nil
-    group.blocking_requires_conquest = false
-    if group.strategic_target_well_id ~= nil then
-        issue_wave_group_move(context, group, group.strategic_target_well_id)
-        return true
-    end
-    return false
-end
-
-local function spawn_one_ship(context, player_index, spawn_well_id, unit_type, wave, ship_spec, wave_unit_ids)
-    local spawn_def = spawn_units_definition.new()
-    spawn_def:add_required_units(unit_type, 1, make_spawn_options(wave, ship_spec))
-    local spawned_units = context.simulation:create_units_by_id(
-        spawn_def, nil, spawn_well_id, player_index, float3.new(0.0, 0.0, 0.0),
-        true, CONFIG.hyperspace_arrival_delay_seconds, nil, CONFIG.special_operation_kind
-    )
-    if spawned_units == nil or #spawned_units == 0 then return nil end
-    local unit = spawned_units[1]
-    for extra_index = 2, #spawned_units do
-        context.simulation:despawn_unit_by_id(spawned_units[extra_index].id)
-    end
-    context.simulation:set_unit_auto_order_mode_by_id(unit.id, "engage_any_targets")
-    if wave_unit_ids ~= nil then wave_unit_ids[#wave_unit_ids + 1] = unit.id end
-    return unit
-end
 
 local function build_eligible_weight_pool(context, faction, game_time, remaining_supply)
     local pool = {}
@@ -714,28 +723,201 @@ local function build_eligible_weight_pool(context, faction, game_time, remaining
     return pool
 end
 
-local function spawn_elite_ships(context, race, elite_id, balance, player_index, spawn_well_id, wave_unit_ids)
-    local elite_definition = CONFIG.elite_waves[elite_id]
-    if elite_definition == nil then error("missing elite definition " .. tostring(elite_id)) end
-    local elite_list = elite_definition[tostring(race)]
-    if elite_list == nil then return 0, {} end
-    local spawned_count = 0
-    local composition = {}
-    for _, elite_ship in ipairs(elite_list) do
-        local unit_type = elite_ship.unit
-        local count = elite_ship.count or 1
-        if unit_type == nil then error("elite ship entry is missing unit for race " .. tostring(race)) end
-        for _ = 1, count do
-            local unit = spawn_one_ship(
-                context, player_index, spawn_well_id, unit_type,
-                balance, with_random_ship_artifact(context, elite_ship), wave_unit_ids
-            )
-            if unit == nil then error("failed to spawn elite ship " .. tostring(unit_type)) end
-            spawned_count = spawned_count + 1
-            composition[unit_type] = (composition[unit_type] or 0) + 1
+local function make_spawn_batch_key(wave, unit_type, ship_spec)
+    local parts = { tostring(unit_type), "level=" .. tostring(get_effective_ship_level(wave, ship_spec)) }
+    if ship_spec ~= nil and ship_spec.items ~= nil then
+        for _, item_name in ipairs(ship_spec.items) do
+            parts[#parts + 1] = "item=" .. tostring(item_name)
         end
     end
-    return spawned_count, composition
+    return table.concat(parts, "|")
+end
+
+local function new_spawn_plan()
+    return { batches = {}, by_key = {}, expected_count = 0 }
+end
+
+local function add_to_spawn_plan(plan, wave, unit_type, ship_spec, count)
+    count = count or 1
+    if count <= 0 then return end
+    if unit_type == nil then error("spawn plan entry is missing unit") end
+
+    local key = make_spawn_batch_key(wave, unit_type, ship_spec)
+    local batch = plan.by_key[key]
+    if batch == nil then
+        batch = { unit_type = unit_type, ship_spec = ship_spec, count = 0 }
+        plan.by_key[key] = batch
+        plan.batches[#plan.batches + 1] = batch
+    end
+
+    batch.count = batch.count + count
+    plan.expected_count = plan.expected_count + count
+end
+
+local function spawn_planned_wave(context, player_index, spawn_well_id, wave, plan)
+    if plan.expected_count <= 0 then return {} end
+
+    local spawn_def = spawn_units_definition.new()
+    for _, batch in ipairs(plan.batches) do
+        spawn_def:add_required_units(
+            batch.unit_type,
+            batch.count,
+            make_spawn_options(wave, batch.ship_spec)
+        )
+    end
+
+    local spawned_units = context.simulation:create_units_by_id(
+        spawn_def, nil, spawn_well_id, player_index, float3.new(0.0, 0.0, 0.0),
+        true, CONFIG.hyperspace_arrival_delay_seconds, nil, CONFIG.special_operation_kind
+    )
+
+    if spawned_units == nil then
+        error("batched wave spawn returned nil")
+    end
+
+    if #spawned_units < plan.expected_count then
+        for _, unit in ipairs(spawned_units) do
+            context.simulation:despawn_unit_by_id(unit.id)
+        end
+        error("batched wave spawn count mismatch: expected " .. tostring(plan.expected_count)
+            .. ", got " .. tostring(#spawned_units))
+    end
+
+    if #spawned_units > plan.expected_count then
+        debug_print("batched wave spawn returned " .. tostring(#spawned_units - plan.expected_count)
+            .. " extra units; despawning extras")
+        for extra_index = plan.expected_count + 1, #spawned_units do
+            context.simulation:despawn_unit_by_id(spawned_units[extra_index].id)
+        end
+    end
+
+    local unit_ids = {}
+    for unit_index = 1, plan.expected_count do
+        local unit = spawned_units[unit_index]
+        context.simulation:set_unit_auto_order_mode_by_id(unit.id, "engage_any_targets")
+        unit_ids[#unit_ids + 1] = unit.id
+    end
+    return unit_ids
+end
+
+local function build_wave_spawn_plan(context, faction, game_time, balance)
+    local plan = new_spawn_plan()
+    local supply_budget = balance.supply or 0
+    local supply_used = 0
+    local normal_count = 0
+    local composition = {}
+
+    for _, mandatory in ipairs(faction.mandatory_ships or {}) do
+        local unit_type = mandatory.unit
+        local supply_cost = get_ship_supply_cost(context, unit_type)
+        local count = mandatory.count or 1
+        if unit_type == nil then error("mandatory ship entry is missing unit for " .. tostring(faction.name)) end
+        if supply_cost == nil then error("could not read supply cost for " .. tostring(unit_type)) end
+
+        local required_supply = supply_cost * count
+        if supply_used + required_supply > supply_budget then
+            error("mandatory ships exceed wave budget: " .. tostring(supply_used + required_supply)
+                .. " > " .. tostring(supply_budget))
+        end
+
+        add_to_spawn_plan(plan, balance, unit_type, mandatory, count)
+        supply_used = supply_used + required_supply
+        normal_count = normal_count + count
+        composition[unit_type] = (composition[unit_type] or 0) + count
+    end
+
+    local weighted_pool = {}
+    local pool_index = 1
+    while supply_used < supply_budget do
+        local remaining_supply = supply_budget - supply_used
+        if pool_index > #weighted_pool then
+            weighted_pool = build_eligible_weight_pool(context, faction, game_time, remaining_supply)
+            pool_index = 1
+        end
+        if #weighted_pool == 0 then break end
+
+        local choice = weighted_pool[pool_index]
+        pool_index = pool_index + 1
+        if choice.supply_cost <= (supply_budget - supply_used) then
+            add_to_spawn_plan(plan, balance, choice.unit_type, choice.spec, 1)
+            supply_used = supply_used + choice.supply_cost
+            normal_count = normal_count + 1
+            composition[choice.unit_type] = (composition[choice.unit_type] or 0) + 1
+        else
+            weighted_pool = {}
+            pool_index = 1
+        end
+    end
+
+    return {
+        plan = plan,
+        supply_budget = supply_budget,
+        supply_used = supply_used,
+        normal_count = normal_count,
+        composition = composition
+    }
+end
+
+local function spawn_one_exact_ship(context, player_index, spawn_well_id, unit_type, wave, ship_spec)
+    local spawn_def = spawn_units_definition.new()
+    spawn_def:add_required_units(unit_type, 1, make_spawn_options(wave, ship_spec))
+    local spawned_units = context.simulation:create_units_by_id(
+        spawn_def, nil, spawn_well_id, player_index, float3.new(0.0, 0.0, 0.0),
+        true, CONFIG.hyperspace_arrival_delay_seconds, nil, CONFIG.special_operation_kind
+    )
+    if spawned_units == nil or #spawned_units == 0 then return nil end
+    local unit = spawned_units[1]
+    for extra_index = 2, #spawned_units do
+        context.simulation:despawn_unit_by_id(spawned_units[extra_index].id)
+    end
+    context.simulation:set_unit_auto_order_mode_by_id(unit.id, "engage_any_targets")
+    return unit
+end
+
+local function spawn_elites_individually(context, race, pending_elites, balance, player_index, spawn_well_id, transaction_unit_ids, composition)
+    local elite_count = 0
+    local elite_labels = {}
+
+    for _, pending_elite in ipairs(pending_elites) do
+        local elite_definition = CONFIG.elite_waves[pending_elite.elite]
+        if elite_definition == nil then
+            error("missing elite definition " .. tostring(pending_elite.elite))
+        end
+
+        local elite_list = elite_definition[tostring(race)]
+        if elite_list ~= nil then
+            for _, elite_ship in ipairs(elite_list) do
+                local unit_type = elite_ship.unit
+                local count = elite_ship.count or 1
+                if unit_type == nil then
+                    error("elite ship entry is missing unit for race " .. tostring(race))
+                end
+
+                for _ = 1, count do
+                    local resolved_spec = with_random_ship_artifact(context, elite_ship)
+                    local unit = spawn_one_exact_ship(
+                        context, player_index, spawn_well_id, unit_type, balance, resolved_spec
+                    )
+                    if unit == nil then error("failed to spawn elite ship " .. tostring(unit_type)) end
+                    transaction_unit_ids[#transaction_unit_ids + 1] = unit.id
+                    elite_count = elite_count + 1
+                    composition[unit_type] = (composition[unit_type] or 0) + 1
+                end
+            end
+        end
+
+        elite_labels[#elite_labels + 1] = tostring(pending_elite.elite)
+    end
+
+    return elite_count, elite_labels
+end
+
+local function despawn_unit_ids(context, unit_ids)
+    for _, unit_id in ipairs(unit_ids or {}) do
+        if context.simulation:does_unit_exist_by_id(unit_id) then
+            context.simulation:despawn_unit_by_id(unit_id)
+        end
+    end
 end
 
 local function update_hud(context)
@@ -767,6 +949,85 @@ local function update_hud(context)
     end
 end
 
+
+
+local function spawn_wave_for_player(context, player_index, player, faction, wave_number, game_time, balance, wave_groups, transaction_unit_ids)
+    local spawn_well = get_home_gravity_well(context, player_index)
+    if spawn_well == nil then return false end
+
+    local target_player_index, strategic_target_well_id, target_distance = find_nearest_enemy_owned_well(
+        context,
+        player_index,
+        spawn_well.id
+    )
+    if strategic_target_well_id == nil then return false end
+
+    local group = {
+        attacker_player_index = player_index,
+        spawn_well_id = spawn_well.id,
+        strategic_target_well_id = strategic_target_well_id,
+        tracker_name = "incursion_wave_" .. tostring(context.instance_id)
+            .. "_" .. tostring(player_index) .. "_" .. tostring(wave_number)
+    }
+
+    local planned = build_wave_spawn_plan(context, faction, game_time, balance)
+    local wave_unit_ids = spawn_planned_wave(
+        context, player_index, spawn_well.id, balance, planned.plan
+    )
+    for _, unit_id in ipairs(wave_unit_ids) do
+        transaction_unit_ids[#transaction_unit_ids + 1] = unit_id
+    end
+
+    local pending_elites = get_pending_elite_events(context, game_time, player_index)
+    local elite_count, elite_labels = spawn_elites_individually(
+        context, player.race, pending_elites, balance, player_index, spawn_well.id,
+        transaction_unit_ids, planned.composition
+    )
+
+    local tracker = get_or_create_wave_tracker(context, group)
+    for _, unit_id in ipairs(transaction_unit_ids) do
+        tracker:add_unit(unit_id)
+    end
+
+    persist_wave_group_state(context, group)
+    wave_groups[#wave_groups + 1] = group
+
+    debug_print("initial strategic target " .. tostring(group.tracker_name)
+        .. " | player " .. tostring(target_player_index)
+        .. " | well " .. tostring(strategic_target_well_id)
+        .. " | jumps " .. tostring(target_distance or 0))
+
+    if spawn_well.id ~= strategic_target_well_id then
+        if not issue_wave_strategic_move(context, group, strategic_target_well_id, "initial target") then
+            debug_print("initial strategic move failed for " .. tostring(group.tracker_name))
+        end
+    end
+
+    for _, pending_elite in ipairs(pending_elites) do
+        context.instance[elite_event_state_key(pending_elite.index, player_index)] = true
+    end
+
+    local composition_parts = {}
+    for unit_type, count in pairs(planned.composition) do
+        composition_parts[#composition_parts + 1] = tostring(unit_type) .. " x" .. tostring(count)
+    end
+    table.sort(composition_parts)
+    local elite_status = #elite_labels > 0
+        and (" | ELITE " .. table.concat(elite_labels, ",")) or ""
+    local spawned_count = planned.normal_count + elite_count
+
+    set_status(context,
+        tostring(faction.name) .. " wave " .. tostring(wave_number)
+        .. " | time " .. tostring(math.floor(game_time)) .. "s"
+        .. " | " .. tostring(planned.supply_used) .. "/" .. tostring(planned.supply_budget) .. " supply"
+        .. " | level " .. tostring(balance.level or 1)
+        .. " | " .. tostring(spawned_count) .. " ships"
+        .. elite_status .. " | " .. table.concat(composition_parts, ", ")
+    )
+
+    return true
+end
+
 function Pirate_incursion_wave_spawn_callback(context)
     context.instance.wave_number = (context.instance.wave_number or 0) + 1
     local wave_number = context.instance.wave_number
@@ -774,203 +1035,79 @@ function Pirate_incursion_wave_spawn_callback(context)
     local balance = get_balance_for_time(game_time)
     context.instance.next_wave_time = game_time + CONFIG.wave_interval_seconds
     local wave_groups = get_wave_groups(context)
+    local playable_indices = get_living_playable_player_indices(context)
+    local spawned_any_wave = false
+    local had_spawn_error = false
 
-    local success, error_message = pcall(function()
-        local playable_indices = get_living_playable_player_indices(context)
-        local spawned_any_wave = false
+    for _, player_index in ipairs(playable_indices) do
+        local player = context.simulation:get_player_by_player_index(player_index)
+        if player ~= nil then
+            local enabled, faction = is_wave_enabled_for_race(player.race)
+            if enabled and faction ~= nil then
+                local transaction_unit_ids = {}
+                local success, result_or_error = pcall(function()
+                    return spawn_wave_for_player(
+                        context, player_index, player, faction, wave_number, game_time, balance,
+                        wave_groups, transaction_unit_ids
+                    )
+                end)
 
-        -- Every living incursion empire spawns its own independent wave.
-        for _, player_index in ipairs(playable_indices) do
-            local player = context.simulation:get_player_by_player_index(player_index)
-            if player ~= nil then
-                local enabled, faction = is_wave_enabled_for_race(player.race)
-                if enabled and faction ~= nil then
-                    local spawn_well = get_home_gravity_well(context, player_index)
-                    if spawn_well ~= nil then
-                        -- Main goal for this wave: nearest enemy-owned planet at spawn time.
-                        local strategic_target_well = find_nearest_enemy_planet_well(context, player_index, spawn_well)
-                        if strategic_target_well ~= nil then
-                            local group = {
-                                attacker_player_index = player_index,
-                                spawn_well_id = spawn_well.id,
-                                strategic_target_well_id = strategic_target_well.id,
-                                blocking_well_id = nil,
-                                blocking_requires_conquest = false,
-                                tracker_name = "incursion_wave_" .. tostring(context.instance_id)
-                                    .. "_" .. tostring(player_index) .. "_" .. tostring(wave_number)
-                            }
-
-                            local supply_budget = balance.supply or 0
-                            local supply_used = 0
-                            local spawned_count = 0
-                            local composition = {}
-                            local wave_unit_ids = {}
-
-                            for _, mandatory in ipairs(faction.mandatory_ships or {}) do
-                                local unit_type = mandatory.unit
-                                local supply_cost = get_ship_supply_cost(context, unit_type)
-                                local count = mandatory.count or 1
-                                if unit_type == nil then error("mandatory ship entry is missing unit for " .. tostring(faction.name)) end
-                                if supply_cost == nil then error("could not read supply cost for " .. tostring(unit_type)) end
-                                for _ = 1, count do
-                                    if supply_used + supply_cost > supply_budget then
-                                        error("mandatory ships exceed wave budget: " .. tostring(supply_used + supply_cost) .. " > " .. tostring(supply_budget))
-                                    end
-                                    local unit = spawn_one_ship(
-                                        context, player_index, spawn_well.id, unit_type,
-                                        balance, mandatory, wave_unit_ids
-                                    )
-                                    if unit == nil then error("failed to spawn mandatory ship " .. tostring(unit_type)) end
-                                    supply_used = supply_used + supply_cost
-                                    spawned_count = spawned_count + 1
-                                    composition[unit_type] = (composition[unit_type] or 0) + 1
-                                end
-                            end
-
-                            local weighted_pool = {}
-                            local pool_index = 1
-                            while supply_used < supply_budget do
-                                local remaining_supply = supply_budget - supply_used
-                                if pool_index > #weighted_pool then
-                                    weighted_pool = build_eligible_weight_pool(context, faction, game_time, remaining_supply)
-                                    pool_index = 1
-                                end
-                                if #weighted_pool == 0 then break end
-                                local choice = weighted_pool[pool_index]
-                                pool_index = pool_index + 1
-                                if choice.supply_cost <= (supply_budget - supply_used) then
-                                    local unit = spawn_one_ship(
-                                        context, player_index, spawn_well.id, choice.unit_type,
-                                        balance, choice.spec, wave_unit_ids
-                                    )
-                                    if unit == nil then error("failed to spawn weighted ship " .. tostring(choice.unit_type)) end
-                                    supply_used = supply_used + choice.supply_cost
-                                    spawned_count = spawned_count + 1
-                                    composition[choice.unit_type] = (composition[choice.unit_type] or 0) + 1
-                                else
-                                    weighted_pool = {}
-                                    pool_index = 1
-                                end
-                            end
-
-                            local elite_labels = {}
-                            local pending_elites = get_pending_elite_events(context, game_time, player_index)
-                            for _, pending_elite in ipairs(pending_elites) do
-                                local elite_spawned_count, elite_composition = spawn_elite_ships(
-                                    context, player.race, pending_elite.elite, balance,
-                                    player_index, spawn_well.id, wave_unit_ids
-                                )
-                                spawned_count = spawned_count + elite_spawned_count
-                                for unit_type, count in pairs(elite_composition) do
-                                    composition[unit_type] = (composition[unit_type] or 0) + count
-                                end
-                                context.instance[elite_event_state_key(pending_elite.index, player_index)] = true
-                                elite_labels[#elite_labels + 1] = tostring(pending_elite.elite)
-                            end
-
-                            -- One wave = one script tracker. This is not a native fleet.
-                            local tracker = get_or_create_wave_tracker(context, group)
-                            for _, unit_id in ipairs(wave_unit_ids) do
-                                tracker:add_unit(unit_id)
-                            end
-
-                            wave_groups[#wave_groups + 1] = group
-
-                            -- One group order after the complete wave exists.
-                            issue_wave_group_move(context, group, group.strategic_target_well_id)
-
-                            local composition_parts = {}
-                            for unit_type, count in pairs(composition) do
-                                composition_parts[#composition_parts + 1] = tostring(unit_type) .. " x" .. tostring(count)
-                            end
-                            table.sort(composition_parts)
-                            local elite_status = #elite_labels > 0 and (" | ELITE " .. table.concat(elite_labels, ",")) or ""
-                            set_status(context,
-                                tostring(faction.name) .. " wave " .. tostring(wave_number)
-                                .. " | time " .. tostring(math.floor(game_time)) .. "s"
-                                .. " | " .. tostring(supply_used) .. "/" .. tostring(supply_budget) .. " supply"
-                                .. " | level " .. tostring(balance.level or 1)
-                                .. " | " .. tostring(spawned_count) .. " ships"
-                                .. elite_status .. " | " .. table.concat(composition_parts, ", ")
-                            )
-                            spawned_any_wave = true
-                        end
-                    end
+                if success then
+                    if result_or_error == true then spawned_any_wave = true end
+                else
+                    had_spawn_error = true
+                    despawn_unit_ids(context, transaction_unit_ids)
+                    local message = "SPAWN ERROR player " .. tostring(player_index)
+                        .. " (" .. tostring(faction.name) .. "): " .. tostring(result_or_error)
+                    debug_print(message)
+                    set_status(context, message)
                 end
             end
         end
+    end
 
-        if not spawned_any_wave then set_status(context, "no valid incursion player/target") end
-    end)
+    if not spawned_any_wave and not had_spawn_error then
+        set_status(context, "no valid incursion player/target")
+    end
 
-    if not success then set_status(context, "SPAWN ERROR: " .. tostring(error_message)) end
     local hud_success, hud_error = pcall(function() update_hud(context) end)
     if not hud_success then debug_print("HUD ERROR: " .. tostring(hud_error)) end
 end
 
 local function update_wave_group(context, group)
-    local tracker = get_or_create_wave_tracker(context, group)
-    if tracker:count() <= 0 then
+    local now = context.simulation.current_time
+    local interval = math.max(1.0, CONFIG.strategic_update_interval_seconds or 5.0)
+
+    if group.next_strategic_update_time == nil then
+        local slot = tonumber(group.state_slot) or tonumber(group.attacker_player_index) or 0
+        local phase_steps = 10
+        local phase = (math.floor(slot) % phase_steps) * (interval / phase_steps)
+        group.next_strategic_update_time = now + phase
+    end
+    if now < group.next_strategic_update_time then return true end
+    group.next_strategic_update_time = now + interval
+
+    if not wave_has_living_units(context, group) then
+        deactivate_wave_group_state(context, group)
         return false
     end
 
-    -- Temporary combat/conquest interruption. The persistent main target is kept.
-    if group.blocking_well_id ~= nil then
-        local blocking_well = context.simulation:get_unit_by_id(group.blocking_well_id)
-
-        if not is_blocking_well_finished(context, group, blocking_well) then
-            -- Native AI owns combat while this well is blocking the wave.
-            -- Do not reapply auto-order mode or issue any movement order here;
-            -- repeated writes would continuously disturb the unit command state.
-            return true
+    if not strategic_target_is_active(context, group) then
+        if group.next_target_search_time == nil or now >= group.next_target_search_time then
+            local source_well_id = get_first_living_wave_well_id(context, group)
+            assign_new_strategic_target(context, group, source_well_id)
         end
-
-        group.blocking_well_id = nil
-        group.blocking_requires_conquest = false
-
-        -- Return to the original main goal after the interruption.
-        if wave_target_is_still_enemy_owned(context, group) then
-            issue_wave_group_move(context, group, group.strategic_target_well_id)
-            return true
-        end
-
-        -- Original target is gone/conquered: choose the new nearest enemy planet.
-        assign_new_nearest_enemy_target(context, group)
         return true
     end
 
-    -- If any member reaches a gravity well owned by an enemy, or a gravity well
-    -- containing enemy ships (including a fleet actively attacking the wave), the
-    -- whole wave interrupts its route and groups on that gravity well.
-    local encountered_well_id, requires_conquest = find_hostile_well_encountered_by_wave(context, group)
-    if encountered_well_id ~= nil then
-        group.blocking_well_id = encountered_well_id
-        group.blocking_requires_conquest = requires_conquest == true
-        set_wave_units_auto_combat(context, group)
-        return true
-    end
-
-    -- If the main target was conquered by somebody else while travelling, retarget.
-    if not wave_target_is_still_enemy_owned(context, group) then
-        assign_new_nearest_enemy_target(context, group)
-        return true
-    end
-
-    -- Cheap fail-safe for groups that stop making inter-well progress.
-    -- It checks only two living ships every 15 seconds and reissues the real
-    -- strategic destination after 60 seconds in the same gravity well.
-    update_group_stuck_watchdog(context, group)
-
+    update_strategic_recovery(context, group)
     return true
 end
 
 local function update_all_target_progress(context)
     local groups = get_wave_groups(context)
-
     for index = #groups, 1, -1 do
-        local group = groups[index]
-        local keep_group = update_wave_group(context, group)
-        if not keep_group then
+        if not update_wave_group(context, groups[index]) then
             table.remove(groups, index)
         end
     end
@@ -1000,6 +1137,7 @@ function Pirate_incursion_on_start(context)
     debug_print("on_start() called")
     context.instance.ready_to_trigger = false
     context.instance.wave_number = 0
+    context.instance.wave_group_count = 0
     WAVE_GROUPS_BY_INSTANCE[context.instance_id] = {}
     context.instance.status_text = "waiting for wave 1"
     context.instance.next_wave_time = context.simulation.current_time + CONFIG.wave_interval_seconds

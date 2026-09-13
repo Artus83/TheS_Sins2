@@ -1,0 +1,12 @@
+{
+    "special_operation_unit_kinds": [
+        {
+            "name": "thes_incursion",
+            "definition": {
+                "is_ever_controllable": false,
+                "will_give_experience": true,
+                "can_join_fleets": false
+            }
+        }
+    ]
+}
