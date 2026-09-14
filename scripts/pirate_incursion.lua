@@ -29,8 +29,8 @@ function Get_event_metadata()
 end
 
 local CONFIG = {
-    debug_hud = false,
-    wave_interval_seconds = 900.0,
+    debug_hud = true,
+    wave_interval_seconds = 20.0,
     hyperspace_arrival_delay_seconds = 10.0,
     wave_timer = "incursion_wave_spawn_timer",
     special_operation_kind = "thes_incursion",
@@ -287,13 +287,14 @@ local function get_or_create_wave_tracker(context, group)
 end
 
 -- Lua has no direct player-alliance query. Use a stable strategic heuristic for
--- the first foreign empire each wave prefers: rank foreign home worlds by direct
--- distance from the wave owner's home world, keep the farthest half (rounded up),
--- then choose the highest-economic-score player from that half. This strongly
--- biases team games away from the nearby ally without pretending Lua knows the
--- real diplomacy state. Native engage_any_targets still decides actual hostility.
--- After the preferred empire is placed first, the existing foreign route order is
--- preserved for all remaining empires and secondary worlds.
+-- the first foreign empire each wave prefers: rank foreign home worlds by the
+-- shortest phase-lane jump distance from the wave owner's home world, keep the
+-- farthest half (rounded up), then choose the highest-economic-score player from
+-- that half. This strongly biases team games away from the nearby ally without
+-- pretending Lua knows the real diplomacy state. Native engage_any_targets still
+-- decides actual hostility. After the preferred empire is placed first, the
+-- existing foreign route order is preserved for all remaining empires and
+-- secondary worlds.
 local function get_foreign_route_well_ids(context, group)
     local attacker_player_index = group.attacker_player_index
     local player_indices = context.simulation:filter_playable_players(function(player)
@@ -303,12 +304,35 @@ local function get_foreign_route_well_ids(context, group)
     end)
     table.sort(player_indices)
 
-    local spawn_well = nil
-    local spawn_position = nil
-    if group.spawn_well_id ~= nil and group.spawn_well_id ~= 0 then
-        spawn_well = context.simulation:get_unit_by_id(group.spawn_well_id)
-        if spawn_well ~= nil then
-            spawn_position = context.simulation:get_unit_position(spawn_well)
+    -- Build shortest-path jump distances once from this wave's spawn/home well.
+    -- Every phase lane counts as one jump. Unreachable wells are left absent and
+    -- therefore cannot enter the farthest-half target candidate set.
+    local jump_distance_by_well_id = {}
+    if group.spawn_well_id ~= nil
+        and group.spawn_well_id ~= 0
+        and context.simulation:does_unit_exist_by_id(group.spawn_well_id)
+    then
+        local queue = { group.spawn_well_id }
+        local queue_head = 1
+        jump_distance_by_well_id[group.spawn_well_id] = 0
+
+        while queue_head <= #queue do
+            local current_well_id = queue[queue_head]
+            queue_head = queue_head + 1
+            local current_distance = jump_distance_by_well_id[current_well_id]
+            local adjacent_wells = context.simulation:get_adjacent_gravity_wells_by_id(current_well_id)
+
+            if adjacent_wells ~= nil then
+                for _, adjacent_well in ipairs(adjacent_wells) do
+                    if adjacent_well ~= nil
+                        and adjacent_well.id ~= nil
+                        and jump_distance_by_well_id[adjacent_well.id] == nil
+                    then
+                        jump_distance_by_well_id[adjacent_well.id] = current_distance + 1
+                        queue[#queue + 1] = adjacent_well.id
+                    end
+                end
+            end
         end
     end
 
@@ -346,21 +370,10 @@ local function get_foreign_route_well_ids(context, group)
                     home_well = sorted_wells[1]
                 end
 
-                local distance_sq = -1.0
-                if spawn_position ~= nil and home_well ~= nil then
-                    local home_position = context.simulation:get_unit_position(home_well)
-                    if home_position ~= nil then
-                        local dx = home_position.x - spawn_position.x
-                        local dy = home_position.y - spawn_position.y
-                        local dz = home_position.z - spawn_position.z
-                        distance_sq = (dx * dx) + (dy * dy) + (dz * dz)
-                    end
-                end
-
                 player_entries[#player_entries + 1] = {
                     player_index = player_index,
                     economic_score = tonumber(player.economic_score) or 0,
-                    distance_sq = distance_sq,
+                    jump_distance = jump_distance_by_well_id[home_well.id],
                     home_well_id = home_well.id,
                     sorted_wells = sorted_wells
                 }
@@ -389,11 +402,20 @@ local function get_foreign_route_well_ids(context, group)
     if preferred_entry == nil then
         local by_distance = {}
         for _, entry in ipairs(player_entries) do
-            by_distance[#by_distance + 1] = entry
+            if entry.jump_distance ~= nil then
+                by_distance[#by_distance + 1] = entry
+            end
         end
+
+        if #by_distance == 0 then
+            group.preferred_target_player_index = nil
+            debug_print("no phase-lane-reachable foreign home world for " .. tostring(group.tracker_name))
+            return {}
+        end
+
         table.sort(by_distance, function(a, b)
-            if a.distance_sq ~= b.distance_sq then
-                return a.distance_sq > b.distance_sq
+            if a.jump_distance ~= b.jump_distance then
+                return a.jump_distance > b.jump_distance
             end
             return a.player_index < b.player_index
         end)
@@ -404,9 +426,9 @@ local function get_foreign_route_well_ids(context, group)
             if preferred_entry == nil
                 or entry.economic_score > preferred_entry.economic_score
                 or (entry.economic_score == preferred_entry.economic_score
-                    and entry.distance_sq > preferred_entry.distance_sq)
+                    and entry.jump_distance > preferred_entry.jump_distance)
                 or (entry.economic_score == preferred_entry.economic_score
-                    and entry.distance_sq == preferred_entry.distance_sq
+                    and entry.jump_distance == preferred_entry.jump_distance
                     and entry.player_index < preferred_entry.player_index)
             then
                 preferred_entry = entry
@@ -418,6 +440,7 @@ local function get_foreign_route_well_ids(context, group)
             .. " | player " .. tostring(preferred_entry.player_index)
             .. " | farthest-half candidates " .. tostring(candidate_count)
             .. "/" .. tostring(#by_distance)
+            .. " | jumps " .. tostring(preferred_entry.jump_distance)
             .. " | economy " .. tostring(preferred_entry.economic_score))
     end
 
