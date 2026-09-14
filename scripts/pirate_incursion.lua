@@ -29,8 +29,8 @@ function Get_event_metadata()
 end
 
 local CONFIG = {
-    debug_hud = true,
-    wave_interval_seconds = 20.0,
+    debug_hud = false,
+    wave_interval_seconds = 900.0,
     hyperspace_arrival_delay_seconds = 10.0,
     wave_timer = "incursion_wave_spawn_timer",
     special_operation_kind = "thes_incursion",
@@ -43,14 +43,11 @@ local CONFIG = {
 
     supply_start = 100,
     supply_end = 2400,
-    supply_end_time = 8100,
+    supply_end_time = 7200,
 
-    level_timeline = {
-        { time = 0,    level = 3 },
-        { time = 900,  level = 4 },
-        { time = 2700, level = 5 },
-        { time = 5400, level = 6 }
-    },
+    level_start = 3,
+    level_end = 10,
+    level_end_time = 7200,
 
     elite_events = {
         { time = 2700, elite = 1 },
@@ -648,16 +645,14 @@ local function is_wave_enabled_for_race(race)
 end
 
 local function get_level_for_time(game_time)
-    if #CONFIG.level_timeline == 0 then return 1 end
-    local level = CONFIG.level_timeline[1].level or 1
-    for _, entry in ipairs(CONFIG.level_timeline) do
-        if game_time >= entry.time then
-            level = entry.level or level
-        else
-            break
-        end
-    end
-    return level
+    local start_level = CONFIG.level_start or 1
+    local end_level = CONFIG.level_end or start_level
+    local end_time = CONFIG.level_end_time or 0
+    if end_time <= 0 then return end_level end
+    if game_time <= 0 then return start_level end
+    if game_time >= end_time then return end_level end
+    local progress = game_time / end_time
+    return math.floor(start_level + ((end_level - start_level) * progress) + 0.5)
 end
 
 local function get_supply_for_time(game_time)
