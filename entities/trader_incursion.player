@@ -5519,29 +5519,24 @@
             "credits": 100
         },
         "trade_ship_escorts": [
-            {
-                "unit": "trader_heavy_cruiser",
-                "special_operation_unit_kind": "trade_escort",
-                "count_per_trade_ship": 2,
-                "research_prerequisites": [
-                    [
-                        "trader_unlock_trade_escorts_0"
-                    ]
-                ],
-                "construction_time": 60
-            },
-            {
-                "unit": "trader_carrier_cruiser",
-                "special_operation_unit_kind": "trade_escort",
-                "count_per_trade_ship": 2,
-                "research_prerequisites": [
-                    [
-                        "trader_unlock_trade_escorts_1"
-                    ]
-                ],
-                "construction_time": 60
-            }
-        ]
+        {
+            "unit": "trader_antifighter_frigate",
+            "special_operation_unit_kind": "trade_escort",
+            "count_per_trade_ship": 1,
+            "research_prerequisites": [
+                ["trader_unlock_trade_escorts_0"]
+            ],
+            "construction_time": 60
+        },
+        {
+            "unit": "trader_heavy_cruiser",
+            "special_operation_unit_kind": "trade_escort",
+            "count_per_trade_ship": 1,
+            "research_prerequisites": [
+                ["trader_unlock_trade_escorts_1"]
+            ],
+            "construction_time": 60
+        }]
     },
     "max_supply": {
         "levels": [
