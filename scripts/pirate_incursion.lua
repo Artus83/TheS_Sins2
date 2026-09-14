@@ -235,6 +235,7 @@ local function persist_wave_group_state(context, group)
     context.instance[wave_group_state_key(slot, "spawn_well_id")] = group.spawn_well_id
     context.instance[wave_group_state_key(slot, "strategic_target_well_id")] = group.strategic_target_well_id
     context.instance[wave_group_state_key(slot, "route_cursor_well_id")] = group.route_cursor_well_id
+    context.instance[wave_group_state_key(slot, "preferred_target_player_index")] = group.preferred_target_player_index
     context.instance[wave_group_state_key(slot, "tracker_name")] = group.tracker_name
 end
 
@@ -261,6 +262,7 @@ local function rebuild_wave_groups_from_instance(context)
                     spawn_well_id = spawn_well_id,
                     strategic_target_well_id = context.instance[wave_group_state_key(slot, "strategic_target_well_id")],
                     route_cursor_well_id = context.instance[wave_group_state_key(slot, "route_cursor_well_id")],
+                    preferred_target_player_index = context.instance[wave_group_state_key(slot, "preferred_target_player_index")],
                     tracker_name = tracker_name
                 }
             end
@@ -284,12 +286,16 @@ local function get_or_create_wave_tracker(context, group)
     return context:get_or_create_unit_tracker(group.tracker_name)
 end
 
--- Lua deliberately does not classify playable players as enemies. The event API
--- exposed to this script has no player-alliance query, while native unit AI does
--- know current attackability. Strategic routing therefore treats other empires'
--- gravity wells only as route waypoints. engage_any_targets decides dynamically
--- who is actually hostile, including alliance changes during an incursion.
-local function get_foreign_route_well_ids(context, attacker_player_index)
+-- Lua has no direct player-alliance query. Use a stable strategic heuristic for
+-- the first foreign empire each wave prefers: rank foreign home worlds by direct
+-- distance from the wave owner's home world, keep the farthest half (rounded up),
+-- then choose the highest-economic-score player from that half. This strongly
+-- biases team games away from the nearby ally without pretending Lua knows the
+-- real diplomacy state. Native engage_any_targets still decides actual hostility.
+-- After the preferred empire is placed first, the existing foreign route order is
+-- preserved for all remaining empires and secondary worlds.
+local function get_foreign_route_well_ids(context, group)
+    local attacker_player_index = group.attacker_player_index
     local player_indices = context.simulation:filter_playable_players(function(player)
         return not player.is_npc
             and not player.has_lost
@@ -297,15 +303,22 @@ local function get_foreign_route_well_ids(context, attacker_player_index)
     end)
     table.sort(player_indices)
 
-    local home_ids = {}
-    local other_ids = {}
-    local seen = {}
+    local spawn_well = nil
+    local spawn_position = nil
+    if group.spawn_well_id ~= nil and group.spawn_well_id ~= 0 then
+        spawn_well = context.simulation:get_unit_by_id(group.spawn_well_id)
+        if spawn_well ~= nil then
+            spawn_position = context.simulation:get_unit_position(spawn_well)
+        end
+    end
+
+    local player_entries = {}
 
     for _, player_index in ipairs(player_indices) do
         local player = context.simulation:get_player_by_player_index(player_index)
         local owned_wells = context.simulation:get_gravity_wells_owned_by_player_index(player_index)
 
-        if owned_wells ~= nil and #owned_wells > 0 then
+        if player ~= nil and owned_wells ~= nil and #owned_wells > 0 then
             local sorted_wells = {}
             for _, well in ipairs(owned_wells) do
                 if well ~= nil and well.id ~= nil then
@@ -314,30 +327,123 @@ local function get_foreign_route_well_ids(context, attacker_player_index)
             end
             table.sort(sorted_wells, function(a, b) return a.id < b.id end)
 
-            local home_well_id = nil
-            if player ~= nil and player.home_planet ~= nil then
-                for _, well in ipairs(sorted_wells) do
-                    local primary_fixture = context.simulation:get_gravity_well_primary_fixture(well)
-                    if primary_fixture ~= nil and primary_fixture.id == player.home_planet.id then
-                        home_well_id = well.id
-                        break
+            if #sorted_wells > 0 then
+                local home_well = nil
+                if player.home_planet ~= nil then
+                    for _, well in ipairs(sorted_wells) do
+                        local primary_fixture = context.simulation:get_gravity_well_primary_fixture(well)
+                        if primary_fixture ~= nil and primary_fixture.id == player.home_planet.id then
+                            home_well = well
+                            break
+                        end
                     end
                 end
-            end
 
-            -- Visit all other empires' current home worlds before secondary worlds.
-            -- This keeps the strategic route focused without pretending those
-            -- empires are enemies; native AI decides that from live diplomacy.
-            if home_well_id ~= nil and not seen[home_well_id] then
-                seen[home_well_id] = true
-                home_ids[#home_ids + 1] = home_well_id
-            end
-
-            for _, well in ipairs(sorted_wells) do
-                if not seen[well.id] then
-                    seen[well.id] = true
-                    other_ids[#other_ids + 1] = well.id
+                -- A living player with territory should normally have a resolvable
+                -- home world. Fall back to their first owned well if the original
+                -- home planet was lost or cannot be resolved.
+                if home_well == nil then
+                    home_well = sorted_wells[1]
                 end
+
+                local distance_sq = -1.0
+                if spawn_position ~= nil and home_well ~= nil then
+                    local home_position = context.simulation:get_unit_position(home_well)
+                    if home_position ~= nil then
+                        local dx = home_position.x - spawn_position.x
+                        local dy = home_position.y - spawn_position.y
+                        local dz = home_position.z - spawn_position.z
+                        distance_sq = (dx * dx) + (dy * dy) + (dz * dz)
+                    end
+                end
+
+                player_entries[#player_entries + 1] = {
+                    player_index = player_index,
+                    economic_score = tonumber(player.economic_score) or 0,
+                    distance_sq = distance_sq,
+                    home_well_id = home_well.id,
+                    sorted_wells = sorted_wells
+                }
+            end
+        end
+    end
+
+    if #player_entries == 0 then
+        group.preferred_target_player_index = nil
+        return {}
+    end
+
+    local preferred_entry = nil
+    if group.preferred_target_player_index ~= nil then
+        for _, entry in ipairs(player_entries) do
+            if entry.player_index == group.preferred_target_player_index then
+                preferred_entry = entry
+                break
+            end
+        end
+    end
+
+    -- Select once per wave and keep the choice stable while that player remains
+    -- alive and owns territory. If that player disappears, this block selects a
+    -- replacement using the same farthest-half + highest-economy rule.
+    if preferred_entry == nil then
+        local by_distance = {}
+        for _, entry in ipairs(player_entries) do
+            by_distance[#by_distance + 1] = entry
+        end
+        table.sort(by_distance, function(a, b)
+            if a.distance_sq ~= b.distance_sq then
+                return a.distance_sq > b.distance_sq
+            end
+            return a.player_index < b.player_index
+        end)
+
+        local candidate_count = math.max(1, math.floor((#by_distance + 1) / 2))
+        for index = 1, candidate_count do
+            local entry = by_distance[index]
+            if preferred_entry == nil
+                or entry.economic_score > preferred_entry.economic_score
+                or (entry.economic_score == preferred_entry.economic_score
+                    and entry.distance_sq > preferred_entry.distance_sq)
+                or (entry.economic_score == preferred_entry.economic_score
+                    and entry.distance_sq == preferred_entry.distance_sq
+                    and entry.player_index < preferred_entry.player_index)
+            then
+                preferred_entry = entry
+            end
+        end
+
+        group.preferred_target_player_index = preferred_entry.player_index
+        debug_print("preferred strategic player " .. tostring(group.tracker_name)
+            .. " | player " .. tostring(preferred_entry.player_index)
+            .. " | farthest-half candidates " .. tostring(candidate_count)
+            .. "/" .. tostring(#by_distance)
+            .. " | economy " .. tostring(preferred_entry.economic_score))
+    end
+
+    -- Keep the old deterministic player-index order for every player after the
+    -- preferred target. Only the first strategic empire is changed by this filter.
+    local ordered_entries = { preferred_entry }
+    for _, entry in ipairs(player_entries) do
+        if entry.player_index ~= preferred_entry.player_index then
+            ordered_entries[#ordered_entries + 1] = entry
+        end
+    end
+
+    local home_ids = {}
+    local other_ids = {}
+    local seen = {}
+
+    for _, entry in ipairs(ordered_entries) do
+        if entry.home_well_id ~= nil and not seen[entry.home_well_id] then
+            seen[entry.home_well_id] = true
+            home_ids[#home_ids + 1] = entry.home_well_id
+        end
+
+        for _, well in ipairs(entry.sorted_wells) do
+            if not seen[well.id] then
+                seen[well.id] = true
+                other_ids[#other_ids + 1] = well.id
             end
         end
     end
@@ -398,7 +504,7 @@ end
 -- becoming a permanent bounce pair. When there is only one foreign-owned well,
 -- the route goes back to the wave's spawn well before visiting it again.
 local function select_next_route_waypoint(context, group, current_well_id)
-    local route_well_ids = get_foreign_route_well_ids(context, group.attacker_player_index)
+    local route_well_ids = get_foreign_route_well_ids(context, group)
     local cursor = group.route_cursor_well_id
 
     if #route_well_ids > 0 then
@@ -415,14 +521,9 @@ local function select_next_route_waypoint(context, group, current_well_id)
             end
 
             if not found_cursor then
-                for index, well_id in ipairs(route_well_ids) do
-                    if well_id > cursor then
-                        start_index = index
-                        found_cursor = true
-                        break
-                    end
-                end
-                if not found_cursor then start_index = 1 end
+                -- The preferred player can change only if the previous preferred
+                -- player is gone. Restart from the new route head in that case.
+                start_index = 1
             end
         end
 
@@ -902,6 +1003,7 @@ local function spawn_wave_for_player(context, player_index, player, faction, wav
         spawn_well_id = spawn_well.id,
         strategic_target_well_id = nil,
         route_cursor_well_id = nil,
+        preferred_target_player_index = nil,
         tracker_name = "incursion_wave_" .. tostring(context.instance_id)
             .. "_" .. tostring(player_index) .. "_" .. tostring(wave_number)
     }
