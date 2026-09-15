@@ -47,7 +47,7 @@ local CONFIG = {
 
     level_start = 3,
     level_end = 10,
-    level_end_time = 7200,
+    level_end_time = 10800,
 
     elite_events = {
         { time = 2700, elite = 1 },
