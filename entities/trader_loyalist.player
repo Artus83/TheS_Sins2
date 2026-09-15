@@ -966,7 +966,6 @@
             "trader_unlock_hangar_defense_structure",
             "trader_unlock_heavy_armor_unit_item",
             "trader_unlock_heavy_cruiser",
-            "trader_unlock_heavy_garrison",
             "trader_unlock_heavy_gauss_slugs_unit_item",
             "trader_unlock_high_density_district_unit_item",
             "trader_unlock_high_yield_warheads_unit_item",
@@ -1094,7 +1093,6 @@
         "faction_research_subjects": [
             "trader_unlock_garrison_recruitment_center",
             "trader_garrison_max_supply",
-            "trader_unlock_heavy_garrison",
             "trader_loyalist_garrison_max_supply",
             "trader_fortification_specialist",
             "trader_starbase_item_price",
