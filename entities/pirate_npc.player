@@ -199,6 +199,16 @@
         "trader_gauss_defense_structure",
         "trader_hangar_defense_structure"
     ],
+    "corruption_thresholds": [
+        0.1,
+        0.5,
+        0.9
+    ],
+    "negative_corruption_buffs": [
+        "trader_ship_corruption_penalty_mild",
+        "trader_ship_corruption_penalty_moderate",
+        "trader_ship_corruption_penalty_extreme"
+    ],
     "npc":
     {
         "can_survey_planets": false,
@@ -331,6 +341,13 @@
                     {
                         "unit": "pirate_siege_frigate",
                         "count": [4, 6]
+                    },
+                    {
+                        "unit": "trader_battle_capital_ship",
+                        "options":
+                        {
+                            "level": 3
+                        }
                     }],
                     "random_units": [
                     {
@@ -342,7 +359,7 @@
                         "weight": 1.0
                     }]
                 },
-                "supply_cap": 150,
+                "supply_cap": 300,
                 "threat_level": "low"
             },
             {
@@ -357,6 +374,10 @@
                     {
                         "unit": "pirate_siege_frigate",
                         "count": [6, 8]
+                    },
+                    {
+                        "unit": "trader_battle_capital_ship",
+                        "count": [2, 2]
                     }],
                     "random_units": [
                     {
@@ -368,7 +389,7 @@
                         "weight": 2.0
                     }]
                 },
-                "supply_cap": 250,
+                "supply_cap": 500,
                 "threat_level": "moderate"
             },
             {
@@ -383,6 +404,41 @@
                     {
                         "unit": "pirate_siege_frigate",
                         "count": [8, 10]
+                    },
+                    {
+                        "unit": "trader_battle_capital_ship",
+                        "options":
+                        {
+                            "level": 4
+                        }
+                    },
+                    {
+                        "unit": "trader_battle_capital_ship",
+                        "options":
+                        {
+                            "level": 4
+                        }
+                    },
+                    {
+                        "unit": "trader_battle_capital_ship",
+                        "options":
+                        {
+                            "level": 4
+                        }
+                    },
+                    {
+                        "unit": "trader_battle_capital_ship",
+                        "options":
+                        {
+                            "level": 4
+                        }
+                    },
+                    {
+                        "unit": "pirate_king_capital_ship",
+                        "options":
+                        {
+                            "level": 4
+                        }
                     }],
                     "random_units": [
                     {
@@ -394,7 +450,7 @@
                         "weight": 4.0
                     }]
                 },
-                "supply_cap": 400,
+                "supply_cap": 800,
                 "threat_level": "medium"
             },
             {
@@ -409,6 +465,76 @@
                     {
                         "unit": "pirate_siege_frigate",
                         "count": [10, 12]
+                    },
+                    {
+                        "unit": "trader_battle_capital_ship",
+                        "options":
+                        {
+                            "level": 5
+                        }
+                    },
+                    {
+                        "unit": "trader_battle_capital_ship",
+                        "options":
+                        {
+                            "level": 5
+                        }
+                    },
+                    {
+                        "unit": "trader_battle_capital_ship",
+                        "options":
+                        {
+                            "level": 5
+                        }
+                    },
+                    {
+                        "unit": "trader_battle_capital_ship",
+                        "options":
+                        {
+                            "level": 5
+                        }
+                    },
+                    {
+                        "unit": "trader_battle_capital_ship",
+                        "options":
+                        {
+                            "level": 5
+                        }
+                    },
+                    {
+                        "unit": "trader_battle_capital_ship",
+                        "options":
+                        {
+                            "level": 5
+                        }
+                    },
+                    {
+                        "unit": "trader_battle_capital_ship",
+                        "options":
+                        {
+                            "level": 5
+                        }
+                    },
+                    {
+                        "unit": "trader_battle_capital_ship",
+                        "options":
+                        {
+                            "level": 5
+                        }
+                    },
+                    {
+                        "unit": "pirate_king_capital_ship",
+                        "options":
+                        {
+                            "level": 5
+                        }
+                    },
+                    {
+                        "unit": "pirate_king_capital_ship",
+                        "options":
+                        {
+                            "level": 5
+                        }
                     }],
                     "random_units": [
                     {
@@ -420,7 +546,7 @@
                         "weight": 5.0
                     }]
                 },
-                "supply_cap": 800,
+                "supply_cap": 1600,
                 "threat_level": "high"
             },
             {
@@ -444,8 +570,53 @@
                         "unit": "pirate_king_capital_ship",
                         "options":
                         {
-                            "level": 3,
+                            "level": 6,
                             "forced_leveled_up_abilities": ["pirate_king_capital_ship_redline_navigation"]
+                        }
+                    },
+                    {
+                        "unit": "pirate_king_capital_ship",
+                        "options":
+                        {
+                            "level": 6,
+                            "forced_leveled_up_abilities": ["pirate_king_capital_ship_redline_navigation"]
+                        }
+                    },
+                    {
+                        "unit": "pirate_king_capital_ship",
+                        "options":
+                        {
+                            "level": 6,
+                            "forced_leveled_up_abilities": ["pirate_king_capital_ship_redline_navigation"]
+                        }
+                    },
+                    {
+                        "unit": "pirate_king_capital_ship",
+                        "options":
+                        {
+                            "level": 6,
+                            "forced_leveled_up_abilities": ["pirate_king_capital_ship_redline_navigation"]
+                        }
+                    },
+                    {
+                        "unit": "trader_rebel_titan",
+                        "options":
+                        {
+                            "level": 6
+                        }
+                    },
+                    {
+                        "unit": "dlc2_trader_loyalist_super_capital_ship",
+                        "options":
+                        {
+                            "level": 6
+                        }
+                    },
+                    {
+                        "unit": "dlc2_trader_loyalist_super_capital_ship",
+                        "options":
+                        {
+                            "level": 6
                         }
                     }],
                     "random_units": [
@@ -462,7 +633,7 @@
                         "weight": 1.0
                     }]
                 },
-                "supply_cap": 1600,
+                "supply_cap": 3200,
                 "threat_level": "extreme"
             }]
         },
@@ -625,6 +796,16 @@
                 "crystal_income_rate_per_population": 0.005
             },
             "research":
+            {},
+            "corruption":
+            {},
+            "industry":
+            {},
+            "influence":
+            {},
+            "culture":
+            {},
+            "population":
             {},
             "surveying":
             {},
