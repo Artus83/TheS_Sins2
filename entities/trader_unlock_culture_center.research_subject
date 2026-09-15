@@ -1,0 +1,36 @@
+{
+    "version": 0,
+    "domain": "civilian",
+    "tier": 1,
+    "field": "civilian_policy",
+    "field_coord": [2, 4],
+    "research_time": 120.0,
+    "price":
+    {
+        "credits": 700.0,
+        "metal": 100.0,
+        "crystal": 125.0
+    },
+    "buff_providers": [
+    {
+        "scope": "all_owned_units",
+        "all_owned_units_target_filter":
+        {
+            "ownerships": [
+                "self"
+            ],
+            "constraints": [
+            {
+                "constraint_type": "has_experience"
+            }]
+        },
+        "action_data_source": "passive_experience",
+        "buff": "passive_experience"
+    }],
+    "name": "trader_unlock_culture_center_research_subject_name",
+    "name_uppercase": "trader_unlock_culture_center_research_subject_name_uppercase",
+    "hud_icon": "trader_culture_center_structure_hud_icon",
+    "tooltip_picture": "trader_culture_center_structure_tooltip_picture",
+    "extra_text_filter_strings": [
+        "research_text_filter_culture"]
+}

@@ -693,11 +693,6 @@
                         "id": "civilian_material",
                         "name": "advent_research_field_name_civilian_material",
                         "picture": "advent_research_field_picture_civilian_material"
-                    },
-                    {
-                        "id": "passive",
-                        "name": "dlc3_herald_research_field_name_military_arrival",
-                        "picture": "herald_research_field_picture_military_arrival"
                     }
                 ],
                 "full_name": "advent_research_domain_full_name_civilian",
@@ -1069,8 +1064,7 @@
             "advent_unlock_starbase_psi_projector_unit_item",
             "advent_unlock_starbase_upgrade_missile_weapon_unit_item",
             "dlc3_advent_loyalist_shroud_mitigation",
-            "dlc3_advent_rebel_shroud_removal",
-            "passive_experience"
+            "dlc3_advent_rebel_shroud_removal"
         ],
         "faction_research_subjects": [
             "advent_unlock_temple_of_pilgrimage_unit_item",

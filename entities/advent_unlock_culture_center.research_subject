@@ -1,0 +1,36 @@
+{
+    "version": 0,
+    "domain": "civilian",
+    "tier": 0,
+    "field": "civilian_evangelism",
+    "field_coord": [0, 5],
+    "research_time": 60.0,
+    "price":
+    {
+        "credits": 250.0,
+        "metal": 25.0,
+        "crystal": 75.0
+    },
+    "buff_providers": [
+    {
+        "scope": "all_owned_units",
+        "all_owned_units_target_filter":
+        {
+            "ownerships": [
+                "self"
+            ],
+            "constraints": [
+            {
+                "constraint_type": "has_experience"
+            }]
+        },
+        "action_data_source": "passive_experience",
+        "buff": "passive_experience"
+    }],
+    "name": "advent_unlock_culture_center_research_subject_name",
+    "name_uppercase": "advent_unlock_culture_center_research_subject_name_uppercase",
+    "hud_icon": "advent_culture_center_structure_hud_icon",
+    "tooltip_picture": "advent_culture_center_structure_tooltip_picture",
+    "extra_text_filter_strings": [
+        "research_text_filter_culture"]
+}

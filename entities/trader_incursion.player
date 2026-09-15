@@ -692,11 +692,6 @@
                         "id": "civilian_policy",
                         "name": "trader_research_field_name_civilian_policy",
                         "picture": "trader_research_field_picture_civilian_policy"
-                    },
-                    {
-                        "id": "passive",
-                        "name": "dlc3_herald_research_field_name_military_arrival",
-                        "picture": "herald_research_field_picture_military_arrival"
                     }
                 ],
                 "full_name": "trader_research_domain_full_name_civilian",
@@ -1094,8 +1089,7 @@
             "trader_unlock_starbase_command_center_unit_item",
             "trader_unlock_starbase_factory_support_unit_item",
             "trader_unlock_starbase_flak_field_unit_item",
-            "trader_unlock_starbase_stun_torpedo_unit_item",
-            "passive_experience"
+            "trader_unlock_starbase_stun_torpedo_unit_item"
         ],
         "faction_research_subjects": [
             "trader_unlock_garrison_recruitment_center",

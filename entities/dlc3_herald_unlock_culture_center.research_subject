@@ -1,0 +1,34 @@
+{
+    "version": 0,
+    "domain": "civilian",
+    "tier": 1,
+    "field": "civilian_coercion",
+    "field_coord": [2, 3],
+    "research_time": 90.0,
+    "price":
+    {
+        "credits": 600.0,
+        "metal": 150.0,
+        "crystal": 150.0
+    },
+    "buff_providers": [
+    {
+        "scope": "all_owned_units",
+        "all_owned_units_target_filter":
+        {
+            "ownerships": [
+                "self"
+            ],
+            "constraints": [
+            {
+                "constraint_type": "has_experience"
+            }]
+        },
+        "action_data_source": "passive_experience",
+        "buff": "passive_experience"
+    }],
+    "name": "dlc3_herald_unlock_culture_center_research_subject_name",
+    "name_uppercase": "dlc3_herald_unlock_culture_center_research_subject_name_uppercase",
+    "hud_icon": "dlc3_herald_culture_center_structure_hud_icon",
+    "tooltip_picture": "dlc3_herald_culture_center_structure_tooltip_picture"
+}

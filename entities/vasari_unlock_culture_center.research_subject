@@ -1,0 +1,36 @@
+{
+    "version": 0,
+    "domain": "civilian",
+    "tier": 1,
+    "field": "civilian_oppression",
+    "field_coord": [2, 2],
+    "research_time": 120.0,
+    "price":
+    {
+        "metal": 240.0,
+        "crystal": 210.0,
+        "credits": 0.0
+    },
+    "buff_providers": [
+    {
+        "scope": "all_owned_units",
+        "all_owned_units_target_filter":
+        {
+            "ownerships": [
+                "self"
+            ],
+            "constraints": [
+            {
+                "constraint_type": "has_experience"
+            }]
+        },
+        "action_data_source": "passive_experience",
+        "buff": "passive_experience"
+    }],
+    "name": "vasari_unlock_culture_center_research_subject_name",
+    "name_uppercase": "vasari_unlock_culture_center_research_subject_name_uppercase",
+    "hud_icon": "vasari_culture_center_structure_hud_icon",
+    "tooltip_picture": "vasari_culture_center_structure_tooltip_picture",
+    "extra_text_filter_strings": [
+        "research_text_filter_culture"]
+}
