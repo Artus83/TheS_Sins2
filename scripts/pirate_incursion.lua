@@ -29,8 +29,8 @@ function Get_event_metadata()
 end
 
 local CONFIG = {
-    debug_hud = true,
-    wave_interval_seconds = 20.0,
+    debug_hud = false,
+    wave_interval_seconds = 900.0,
     hyperspace_arrival_delay_seconds = 10.0,
     wave_timer = "incursion_wave_spawn_timer",
     special_operation_kind = "thes_incursion",
