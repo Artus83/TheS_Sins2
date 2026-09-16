@@ -220,6 +220,35 @@ local function wave_group_state_key(slot, field)
     return "wave_group_" .. tostring(slot) .. "_" .. tostring(field)
 end
 
+local function encode_reached_home_players(reached_home_players)
+    local player_indices = {}
+    for player_index, reached in pairs(reached_home_players or {}) do
+        if reached == true then
+            player_indices[#player_indices + 1] = tonumber(player_index)
+        end
+    end
+    table.sort(player_indices)
+
+    local parts = {}
+    for _, player_index in ipairs(player_indices) do
+        parts[#parts + 1] = tostring(player_index)
+    end
+    return table.concat(parts, ",")
+end
+
+local function decode_reached_home_players(value)
+    local reached_home_players = {}
+    if value == nil or value == "" then return reached_home_players end
+
+    for token in string.gmatch(tostring(value), "[^,]+") do
+        local player_index = tonumber(token)
+        if player_index ~= nil then
+            reached_home_players[player_index] = true
+        end
+    end
+    return reached_home_players
+end
+
 local function persist_wave_group_state(context, group)
     if group.state_slot == nil then
         context.instance.wave_group_count = (context.instance.wave_group_count or 0) + 1
@@ -233,6 +262,7 @@ local function persist_wave_group_state(context, group)
     context.instance[wave_group_state_key(slot, "strategic_target_well_id")] = group.strategic_target_well_id
     context.instance[wave_group_state_key(slot, "route_cursor_well_id")] = group.route_cursor_well_id
     context.instance[wave_group_state_key(slot, "preferred_target_player_index")] = group.preferred_target_player_index
+    context.instance[wave_group_state_key(slot, "reached_home_players")] = encode_reached_home_players(group.reached_home_players)
     context.instance[wave_group_state_key(slot, "tracker_name")] = group.tracker_name
 end
 
@@ -260,6 +290,9 @@ local function rebuild_wave_groups_from_instance(context)
                     strategic_target_well_id = context.instance[wave_group_state_key(slot, "strategic_target_well_id")],
                     route_cursor_well_id = context.instance[wave_group_state_key(slot, "route_cursor_well_id")],
                     preferred_target_player_index = context.instance[wave_group_state_key(slot, "preferred_target_player_index")],
+                    reached_home_players = decode_reached_home_players(
+                        context.instance[wave_group_state_key(slot, "reached_home_players")]
+                    ),
                     tracker_name = tracker_name
                 }
             end
@@ -383,6 +416,22 @@ local function get_foreign_route_well_ids(context, group)
         return {}
     end
 
+    group.reached_home_players = group.reached_home_players or {}
+    local all_home_players_reached = true
+    for _, entry in ipairs(player_entries) do
+        if group.reached_home_players[entry.player_index] ~= true then
+            all_home_players_reached = false
+            break
+        end
+    end
+
+    if all_home_players_reached then
+        group.reached_home_players = {}
+        persist_wave_group_state(context, group)
+        debug_print("all foreign home worlds reached; resetting home-target cycle for "
+            .. tostring(group.tracker_name))
+    end
+
     local preferred_entry = nil
     if group.preferred_target_player_index ~= nil then
         for _, entry in ipairs(player_entries) do
@@ -453,15 +502,25 @@ local function get_foreign_route_well_ids(context, group)
     local home_ids = {}
     local other_ids = {}
     local seen = {}
+    local home_well_ids = {}
 
     for _, entry in ipairs(ordered_entries) do
-        if entry.home_well_id ~= nil and not seen[entry.home_well_id] then
+        if entry.home_well_id ~= nil then
+            home_well_ids[entry.home_well_id] = true
+        end
+    end
+
+    for _, entry in ipairs(ordered_entries) do
+        if entry.home_well_id ~= nil
+            and group.reached_home_players[entry.player_index] ~= true
+            and not seen[entry.home_well_id]
+        then
             seen[entry.home_well_id] = true
             home_ids[#home_ids + 1] = entry.home_well_id
         end
 
         for _, well in ipairs(entry.sorted_wells) do
-            if not seen[well.id] then
+            if not home_well_ids[well.id] and not seen[well.id] then
                 seen[well.id] = true
                 other_ids[#other_ids + 1] = well.id
             end
@@ -668,10 +727,65 @@ end
 -- for ownership changes or attempt to decide whether the owner is an ally/enemy.
 -- If attackable enemies are present, native engage_any_targets overrides the
 -- queued move and fights them; after combat the queued strategic route continues.
+local function mark_home_player_reached(context, group, target_well_id)
+    if target_well_id == nil or target_well_id == group.spawn_well_id then return false end
+
+    local player_indices = context.simulation:filter_playable_players(function(player)
+        return not player.is_npc
+            and not player.has_lost
+            and player.player_index ~= group.attacker_player_index
+    end)
+
+    for _, player_index in ipairs(player_indices) do
+        local player = context.simulation:get_player_by_player_index(player_index)
+        local owned_wells = context.simulation:get_gravity_wells_owned_by_player_index(player_index)
+
+        if player ~= nil and owned_wells ~= nil and #owned_wells > 0 then
+            local home_well = nil
+            if player.home_planet ~= nil then
+                for _, well in ipairs(owned_wells) do
+                    local primary_fixture = context.simulation:get_gravity_well_primary_fixture(well)
+                    if primary_fixture ~= nil and primary_fixture.id == player.home_planet.id then
+                        home_well = well
+                        break
+                    end
+                end
+            end
+
+            if home_well == nil then
+                local sorted_wells = {}
+                for _, well in ipairs(owned_wells) do
+                    if well ~= nil and well.id ~= nil then
+                        sorted_wells[#sorted_wells + 1] = well
+                    end
+                end
+                table.sort(sorted_wells, function(a, b) return a.id < b.id end)
+                home_well = sorted_wells[1]
+            end
+
+            if home_well ~= nil and home_well.id == target_well_id then
+                group.reached_home_players = group.reached_home_players or {}
+                if group.reached_home_players[player_index] ~= true then
+                    group.reached_home_players[player_index] = true
+                    persist_wave_group_state(context, group)
+                    debug_print("home world reached " .. tostring(group.tracker_name)
+                        .. " | player " .. tostring(player_index)
+                        .. " | well " .. tostring(target_well_id))
+                end
+                return true
+            end
+        end
+    end
+
+    return false
+end
+
 local function advance_route_if_waypoint_reached(context, group, current_well_id)
     local target_well_id = group.strategic_target_well_id
     if target_well_id == nil or current_well_id == nil then return false end
     if current_well_id ~= target_well_id then return false end
+
+    mark_home_player_reached(context, group, target_well_id)
 
     if target_well_id ~= group.spawn_well_id then
         group.route_cursor_well_id = target_well_id
@@ -1083,6 +1197,7 @@ local function spawn_wave_for_player(context, player_index, player, faction, wav
         strategic_target_well_id = nil,
         route_cursor_well_id = nil,
         preferred_target_player_index = nil,
+        reached_home_players = {},
         last_observed_well_id = spawn_well.id,
         tracker_name = "incursion_wave_" .. tostring(context.instance_id)
             .. "_" .. tostring(player_index) .. "_" .. tostring(wave_number)
@@ -1244,6 +1359,10 @@ local function update_wave_group(context, group)
             group.last_observed_well_id = current_well_id
         elseif current_well_id ~= group.last_observed_well_id then
             group.last_observed_well_id = current_well_id
+
+            if current_well_id == group.strategic_target_well_id then
+                mark_home_player_reached(context, group, current_well_id)
+            end
 
             if group.strategic_target_well_id ~= nil
                 and context.simulation:does_unit_exist_by_id(group.strategic_target_well_id)
