@@ -43,6 +43,71 @@
         {
             "unit": "trader_gauss_defense_structure",
             "count": [14, 22]
+        },
+        {
+            "unit": "trader_starbase",
+            "options":
+            {
+                "items": [
+                    "trader_starbase_structural_integrity_0",
+                    "trader_starbase_structural_integrity_1",
+                    "trader_starbase_structural_integrity_2",
+                    "trader_starbase_planetary_shield_array",
+                    "trader_starbase_unlock_beam_weapon",
+                    "trader_starbase_unlock_torpedo_weapon",
+                    "trader_starbase_stun_torpedo",
+                    "trader_starbase_command_center"
+                ]
+            }
+        },
+        {
+            "unit": "trader_starbase",
+            "options":
+            {
+                "items": [
+                    "trader_starbase_structural_integrity_0",
+                    "trader_starbase_structural_integrity_1",
+                    "trader_starbase_structural_integrity_2",
+                    "trader_starbase_planetary_shield_array",
+                    "trader_starbase_unlock_beam_weapon",
+                    "trader_starbase_unlock_torpedo_weapon",
+                    "trader_starbase_stun_torpedo",
+                    "trader_starbase_command_center"
+                ]
+            }
+        },
+        {
+            "unit": "trader_starbase",
+            "options":
+            {
+                "items": [
+                    "trader_starbase_structural_integrity_0",
+                    "trader_starbase_structural_integrity_1",
+                    "trader_starbase_structural_integrity_2",
+                    "trader_starbase_planetary_shield_array",
+                    "trader_starbase_unlock_beam_weapon",
+                    "trader_starbase_unlock_torpedo_weapon",
+                    "trader_starbase_stun_torpedo",
+                    "trader_starbase_command_center"
+                ]
+            }
+        },
+        {
+            "unit": "trader_loyalist_titan",
+            "options":
+            {
+                "level": 10,
+                "items": [
+                    "trader_loyalist_titan_hull_plating_0",
+                    "trader_loyalist_titan_hull_plating_1",
+                    "trader_loyalist_titan_hull_plating_2",
+                    "trader_heavy_armor",
+                    "trader_combat_repair_system",
+                    "trader_missile_armor",
+                    "trader_loyalist_titan_unlock_beam_weapon",
+                    "trader_loyalist_titan_unlock_missile_weapon"
+                ]
+            }
         }]
     },
     "starting_units_in_formations": [
