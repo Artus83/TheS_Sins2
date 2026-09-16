@@ -29,8 +29,8 @@ function Get_event_metadata()
 end
 
 local CONFIG = {
-    debug_hud = false,
-    wave_interval_seconds = 900.0,
+    debug_hud = true,
+    wave_interval_seconds = 20.0,
     hyperspace_arrival_delay_seconds = 10.0,
     wave_timer = "incursion_wave_spawn_timer",
     special_operation_kind = "thes_incursion",
@@ -515,6 +515,67 @@ local function issue_wave_strategic_move(context, group, target_well_id, reason,
             .. " -> well " .. tostring(target_well_id)
             .. " | " .. tostring(reason or "order"))
     end
+    return issued_any
+end
+
+-- Briefly clear the long-range pilgrimage for ships that have reached a new
+-- gravity well. Native engage_any_targets remains enabled and decides whether
+-- anything in that well is actually hostile.
+local function release_wave_to_native_ai(context, group, current_well_id)
+    if current_well_id == nil or current_well_id == 0 then return {} end
+
+    local tracker = get_or_create_wave_tracker(context, group)
+    local released_unit_ids = {}
+
+    for _, unit_id in ipairs(tracker:get_units()) do
+        if context.simulation:does_unit_exist_by_id(unit_id)
+            and context.simulation:get_unit_current_gravity_well_id(unit_id) == current_well_id
+        then
+            context.simulation:set_unit_auto_order_mode_by_id(unit_id, "engage_any_targets")
+            local success = context.simulation:issue_move_order_by_id(unit_id, current_well_id, {
+                clear_orders = true,
+                ai_override = "anytime",
+                stop_at_destination = true,
+                allow_hyperspace = false,
+                relative_destination = "closest",
+                max_duration = 1.0
+            })
+            if success then
+                released_unit_ids[#released_unit_ids + 1] = unit_id
+            end
+        end
+    end
+
+    if #released_unit_ids > 0 then
+        debug_print("native combat release " .. tostring(group.tracker_name)
+            .. " | well " .. tostring(current_well_id)
+            .. " | ships " .. tostring(#released_unit_ids))
+    end
+
+    return released_unit_ids
+end
+
+local function resume_released_wave_units(context, group, unit_ids, target_well_id)
+    if target_well_id == nil then return false end
+
+    local issued_any = false
+    for _, unit_id in ipairs(unit_ids or {}) do
+        if context.simulation:does_unit_exist_by_id(unit_id) then
+            context.simulation:set_unit_auto_order_mode_by_id(unit_id, "engage_any_targets")
+            local success = context.simulation:issue_move_order_by_id(unit_id, target_well_id, {
+                clear_orders = false,
+                ai_override = "anytime"
+            })
+            if success then issued_any = true end
+        end
+    end
+
+    if issued_any then
+        group.last_order_time = context.simulation.current_time
+        debug_print("resume pilgrimage " .. tostring(group.tracker_name)
+            .. " -> well " .. tostring(target_well_id))
+    end
+
     return issued_any
 end
 
@@ -1022,6 +1083,7 @@ local function spawn_wave_for_player(context, player_index, player, faction, wav
         strategic_target_well_id = nil,
         route_cursor_well_id = nil,
         preferred_target_player_index = nil,
+        last_observed_well_id = spawn_well.id,
         tracker_name = "incursion_wave_" .. tostring(context.instance_id)
             .. "_" .. tostring(player_index) .. "_" .. tostring(wave_number)
     }
@@ -1145,6 +1207,62 @@ end
 local function update_wave_group(context, group)
     local now = context.simulation.current_time
     local interval = math.max(1.0, CONFIG.strategic_update_interval_seconds or 5.0)
+    local current_well_id = get_first_living_wave_well_id(context, group)
+
+    -- A one-second native-AI release is processed on the event's 1.0 second update
+    -- cadence, independently of the existing 5-second strategic controller cadence.
+    if group.native_ai_release_until ~= nil then
+        if now < group.native_ai_release_until then return true end
+
+        local resume_target_well_id = group.native_ai_resume_target_well_id
+        local released_unit_ids = group.native_ai_release_unit_ids
+        group.native_ai_release_until = nil
+        group.native_ai_resume_target_well_id = nil
+        group.native_ai_release_unit_ids = nil
+
+        if resume_target_well_id ~= nil
+            and context.simulation:does_unit_exist_by_id(resume_target_well_id)
+        then
+            resume_released_wave_units(
+                context,
+                group,
+                released_unit_ids,
+                resume_target_well_id
+            )
+        end
+        return true
+    end
+
+    -- Intermediate wells are otherwise invisible to the strategic controller.
+    -- When the representative living ship is first observed in a different well,
+    -- briefly clear the pilgrimage only for wave ships already in that same well.
+    -- Native engage_any_targets then gets one complete event update interval to
+    -- acquire any attackable ships, structures, or planets before the pilgrimage
+    -- is appended again without clearing native combat orders.
+    if current_well_id ~= nil then
+        if group.last_observed_well_id == nil then
+            group.last_observed_well_id = current_well_id
+        elseif current_well_id ~= group.last_observed_well_id then
+            group.last_observed_well_id = current_well_id
+
+            if group.strategic_target_well_id ~= nil
+                and context.simulation:does_unit_exist_by_id(group.strategic_target_well_id)
+            then
+                local released_unit_ids = release_wave_to_native_ai(
+                    context,
+                    group,
+                    current_well_id
+                )
+
+                if #released_unit_ids > 0 then
+                    group.native_ai_release_unit_ids = released_unit_ids
+                    group.native_ai_resume_target_well_id = group.strategic_target_well_id
+                    group.native_ai_release_until = now + 1.0
+                    return true
+                end
+            end
+        end
+    end
 
     if group.next_strategic_update_time == nil then
         local slot = tonumber(group.state_slot) or tonumber(group.attacker_player_index) or 0
@@ -1159,8 +1277,6 @@ local function update_wave_group(context, group)
         deactivate_wave_group_state(context, group)
         return false
     end
-
-    local current_well_id = get_first_living_wave_well_id(context, group)
 
     if group.strategic_target_well_id == nil
         or not context.simulation:does_unit_exist_by_id(group.strategic_target_well_id)
