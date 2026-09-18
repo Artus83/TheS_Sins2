@@ -1,157 +1,223 @@
 {
     "version": 0,
     "target_filters": [
-    {
-        "target_filter_id": "thes_starbase_planet_level_owned_planet_target_filter",
-        "target_filter":
         {
-            "unit_types": [
-                "planet"
-            ],
-            "ownerships": [
-                "self"
-            ]
+            "target_filter_id": "thes_starbase_planet_level_owned_planet_target_filter",
+            "target_filter": {
+                "unit_types": [
+                    "planet"
+                ],
+                "ownerships": [
+                    "self"
+                ]
+            }
         }
-    }],
-    "per_buff_memory_declaration":
-    {
+    ],
+    "per_buff_memory_declaration": {
         "float_variable_ids": [
             "planet_level"
         ]
     },
     "action_values": [
-    {
-        "action_value_id": "thes_starbase_planet_level_defense_track_level",
-        "action_value":
         {
-            "transform_type": "per_planet_current_defense_track_level",
-            "transform_unit":
-            {
-                "unit_type": "previous_spawner"
-            },
-            "values": [1.0]
-        }
-    },
-    {
-        "action_value_id": "thes_starbase_planet_level_logistics_track_level",
-        "action_value":
-        {
-            "transform_type": "per_planet_current_logistics_track_level",
-            "transform_unit":
-            {
-                "unit_type": "previous_spawner"
-            },
-            "values": [1.0]
-        }
-    },
-    {
-        "action_value_id": "thes_starbase_planet_level_commerce_track_level",
-        "action_value":
-        {
-            "transform_type": "per_planet_current_commerce_track_level",
-            "transform_unit":
-            {
-                "unit_type": "previous_spawner"
-            },
-            "values": [1.0]
-        }
-    },
-    {
-        "action_value_id": "thes_starbase_planet_level_mining_track_level",
-        "action_value":
-        {
-            "transform_type": "per_planet_current_mining_track_level",
-            "transform_unit":
-            {
-                "unit_type": "previous_spawner"
-            },
-            "values": [1.0]
-        }
-    },
-    {
-        "action_value_id": "thes_starbase_planet_level_research_track_level",
-        "action_value":
-        {
-            "transform_type": "per_planet_current_research_track_level",
-            "transform_unit":
-            {
-                "unit_type": "previous_spawner"
-            },
-            "values": [1.0]
-        }
-    },
-    {
-        "action_value_id": "thes_starbase_planet_level_focus_track_level",
-        "action_value":
-        {
-            "transform_type": "per_planet_current_focus_track_level",
-            "transform_unit":
-            {
-                "unit_type": "previous_spawner"
-            },
-            "values": [1.0]
-        }
-    },
-    {
-        "action_value_id": "thes_starbase_planet_level_hull_bonus_value",
-        "action_value":
-        {
-            "transform_type": "current_buff_memory_value",
-            "memory_float_variable_id": "planet_level",
-            "values": [1.0]
-        }
-    }],
-    "buff_actions": [
-    {
-        "action_id": "thes_starbase_planet_level_try_create_planet_tracker",
-        "action":
-        {
-            "action_type": "use_unit_operators_on_single_unit",
-            "destination_unit":
-            {
-                "unit_type": "current_spawner",
-                "redirection": "current_gravity_well_primary_fixture"
-            },
-            "operators": [
-            {
-                "constraint":
-                {
-                    "constraint_type": "unit_passes_target_filter",
-                    "unit":
-                    {
-                        "unit_type": "operand_destination"
-                    },
-                    "target_filter_id": "thes_starbase_planet_level_owned_planet_target_filter"
+            "action_value_id": "thes_starbase_planet_level_defense_track_level",
+            "action_value": {
+                "transform_type": "per_planet_current_defense_track_level",
+                "transform_unit": {
+                    "unit_type": "previous_spawner"
                 },
-                "operator_type": "apply_buff",
-                "buff": "thes_starbase_planet_level_hull_on_planet"
-            }]
-        }
-    },
-    {
-        "action_id": "thes_starbase_planet_level_apply_hull_bonus",
-        "action":
+                "values": [
+                    1.0
+                ]
+            }
+        },
         {
-            "action_type": "use_unit_operators_on_single_unit",
-            "destination_unit":
-            {
-                "unit_type": "first_spawner"
-            },
-            "operators": [
-            {
-                "operator_type": "apply_buff",
-                "buff": "thes_starbase_planet_level_hull_bonus"
-            }]
+            "action_value_id": "thes_starbase_planet_level_logistics_track_level",
+            "action_value": {
+                "transform_type": "per_planet_current_logistics_track_level",
+                "transform_unit": {
+                    "unit_type": "previous_spawner"
+                },
+                "values": [
+                    1.0
+                ]
+            }
+        },
+        {
+            "action_value_id": "thes_starbase_planet_level_commerce_track_level",
+            "action_value": {
+                "transform_type": "per_planet_current_commerce_track_level",
+                "transform_unit": {
+                    "unit_type": "previous_spawner"
+                },
+                "values": [
+                    1.0
+                ]
+            }
+        },
+        {
+            "action_value_id": "thes_starbase_planet_level_mining_track_level",
+            "action_value": {
+                "transform_type": "per_planet_current_mining_track_level",
+                "transform_unit": {
+                    "unit_type": "previous_spawner"
+                },
+                "values": [
+                    1.0
+                ]
+            }
+        },
+        {
+            "action_value_id": "thes_starbase_planet_level_research_track_level",
+            "action_value": {
+                "transform_type": "per_planet_current_research_track_level",
+                "transform_unit": {
+                    "unit_type": "previous_spawner"
+                },
+                "values": [
+                    1.0
+                ]
+            }
+        },
+        {
+            "action_value_id": "thes_starbase_planet_level_focus_track_level",
+            "action_value": {
+                "transform_type": "per_planet_current_focus_track_level",
+                "transform_unit": {
+                    "unit_type": "previous_spawner"
+                },
+                "values": [
+                    1.0
+                ]
+            }
+        },
+        {
+            "action_value_id": "thes_starbase_planet_level_hull_bonus_value",
+            "action_value": {
+                "transform_type": "current_buff_memory_value",
+                "memory_float_variable_id": "planet_level",
+                "values": [
+                    0.1
+                ]
+            }
+        },
+        {
+            "action_value_id": "thes_starbase_planet_level_squadron_capacity_bonus_value",
+            "action_value": {
+                "transform_type": "current_buff_memory_value",
+                "memory_float_variable_id": "planet_level",
+                "values": [
+                    1.0
+                ]
+            }
         }
-    }],
+    ],
+    "buff_actions": [
+        {
+            "action_id": "thes_starbase_planet_level_try_create_planet_tracker",
+            "action": {
+                "action_type": "use_unit_operators_on_single_unit",
+                "destination_unit": {
+                    "unit_type": "current_spawner",
+                    "redirection": "current_gravity_well_primary_fixture"
+                },
+                "operators": [
+                    {
+                        "constraint": {
+                            "constraint_type": "unit_passes_target_filter",
+                            "unit": {
+                                "unit_type": "operand_destination"
+                            },
+                            "target_filter_id": "thes_starbase_planet_level_owned_planet_target_filter"
+                        },
+                        "operator_type": "apply_buff",
+                        "buff": "thes_starbase_planet_level_hull_on_planet"
+                    }
+                ]
+            }
+        },
+        {
+            "action_id": "thes_starbase_planet_level_apply_hull_bonus",
+            "action": {
+                "action_type": "use_unit_operators_on_single_unit",
+                "destination_unit": {
+                    "unit_type": "first_spawner"
+                },
+                "operators": [
+                    {
+                        "operator_type": "apply_buff",
+                        "buff": "thes_starbase_planet_level_hull_bonus"
+                    }
+                ]
+            }
+        }
+    ],
     "buff_unit_modifiers": [
-    {
-        "buff_unit_modifier_id": "thes_starbase_planet_level_max_hull_points_modifier",
-        "buff_unit_modifier":
         {
-            "modifier_type": "max_hull_points",
-            "value_behavior": "scalar",
-            "value_id": "thes_starbase_planet_level_hull_bonus_value"
+            "buff_unit_modifier_id": "thes_starbase_planet_level_max_hull_points_modifier",
+            "buff_unit_modifier": {
+                "modifier_type": "max_hull_points",
+                "value_behavior": "scalar",
+                "value_id": "thes_starbase_planet_level_hull_bonus_value"
+            }
+        },
+        {
+            "buff_unit_modifier_id": "thes_starbase_planet_level_max_armor_points_modifier",
+            "buff_unit_modifier": {
+                "modifier_type": "max_armor_points",
+                "value_behavior": "scalar",
+                "value_id": "thes_starbase_planet_level_hull_bonus_value"
+            }
+        },
+        {
+            "buff_unit_modifier_id": "thes_starbase_planet_level_max_shield_points_modifier",
+            "buff_unit_modifier": {
+                "modifier_type": "max_shield_points",
+                "value_behavior": "scalar",
+                "value_id": "thes_starbase_planet_level_hull_bonus_value"
+            }
+        },
+        {
+            "buff_unit_modifier_id": "thes_starbase_planet_level_hull_point_restore_rate_modifier",
+            "buff_unit_modifier": {
+                "modifier_type": "hull_point_restore_rate",
+                "value_behavior": "scalar",
+                "value_id": "thes_starbase_planet_level_hull_bonus_value"
+            }
+        },
+        {
+            "buff_unit_modifier_id": "thes_starbase_planet_level_armor_point_restore_rate_modifier",
+            "buff_unit_modifier": {
+                "modifier_type": "armor_point_restore_rate",
+                "value_behavior": "scalar",
+                "value_id": "thes_starbase_planet_level_hull_bonus_value"
+            }
+        },
+        {
+            "buff_unit_modifier_id": "thes_starbase_planet_level_shield_point_restore_rate_modifier",
+            "buff_unit_modifier": {
+                "modifier_type": "shield_point_restore_rate",
+                "value_behavior": "scalar",
+                "value_id": "thes_starbase_planet_level_hull_bonus_value"
+            }
+        },
+        {
+            "buff_unit_modifier_id": "thes_starbase_planet_level_max_squadron_capacity_modifier",
+            "buff_unit_modifier": {
+                "modifier_type": "max_squadron_capacity",
+                "value_behavior": "additive",
+                "value_id": "thes_starbase_planet_level_squadron_capacity_bonus_value"
+            }
         }
-    }]
+    ],
+    "buff_weapon_modifiers": [
+        {
+            "buff_weapon_modifier_id": "thes_starbase_planet_level_weapon_damage_modifier",
+            "buff_weapon_modifier": {
+                "modifier_type": "damage",
+                "value_behavior": "scalar",
+                "value_id": "thes_starbase_planet_level_hull_bonus_value"
+            }
+        }
+    ]
 }
