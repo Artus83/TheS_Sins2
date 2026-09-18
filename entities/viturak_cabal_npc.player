@@ -1,0 +1,447 @@
+{
+    "version": 0,
+    "race": "vasari",
+    "fleet": "vasari_fleet",
+    "fleet_name_group": "fleet",
+    "default_starting_assets":
+    {
+        "credits": 4500,
+        "metal": 1050,
+        "crystal": 750
+    },
+    "home_planet":
+    {
+        "random_fixture_filling": "random_asteroid_planet",
+        "levels": [
+        {
+            "income_rates":
+            {
+                "credits": 5.0,
+                "metal": 5.0,
+                "crystal": 5.0
+            },
+            "modifier_values":
+            {
+                "max_civilian_structure_slots":
+                {
+                    "additive": 4.0
+                },
+                "max_military_structure_slots":
+                {
+                    "additive": 10.0
+                }
+            }
+        }]
+    },
+    "starting_units_in_gravity_well":
+    {
+        "required_units": [
+        {
+            "unit": "vasari_light_frigate",
+            "count": [10, 15]
+        },
+        {
+            "unit": "vasari_starbase",
+            "options":
+            {
+                "items": [
+                    "vasari_starbase_structural_integrity_0",
+                    "vasari_starbase_structural_integrity_1",
+                    "vasari_starbase_structural_integrity_2",
+                    "vasari_starbase_planetary_shield_array",
+                    "vasari_starbase_debris_vortex",
+                    "vasari_starbase_unlock_extra_phase_missile_weapons",
+                    "vasari_starbase_unlock_extra_wave_weapons",
+                    "vasari_starbase_upgrade_wave_weapons"
+                ]
+            }
+        }]
+    },
+    "starting_units_in_formations": [
+    {
+        "required_units": [
+        {
+            "unit": "vasari_light_frigate",
+            "count": [5, 10]
+        },
+        {
+            "unit": "vasari_exotic_factory_structure",
+            "count": [1, 1]
+        },
+        {
+            "unit": "vasari_phase_gate_structure",
+            "count": [1, 1]
+        }]
+    },
+    {
+        "required_units": [
+        {
+            "unit": "vasari_light_frigate",
+            "count": [5, 10]
+        },
+        {
+            "unit": "vasari_exotic_factory_structure",
+            "count": [1, 1]
+        }]
+    },
+    {
+        "required_units": [
+        {
+            "unit": "vasari_light_frigate",
+            "count": [5, 10]
+        },
+        {
+            "unit": "vasari_exotic_factory_structure",
+            "count": [1, 1]
+        }]
+    }],
+    "unit_limits":
+    {},
+    "buildable_units": [
+        "vasari_scout_corvette",
+        "vasari_light_frigate",
+        "vasari_colony_cruiser",
+        "vasari_heavy_cruiser",
+        "vasari_long_range_frigate",
+        "vasari_carrier_cruiser",
+        "vasari_anticorvette_corvette",
+        "vasari_antiarmor_cruiser",
+        "vasari_siege_cruiser"
+    ],
+    "structure_builder":
+    {
+        "ship": "vasari_constructor_ship",
+        "special_operation_unit_kind": "structure_builder"
+    },
+    "structures": [
+        "vasari_factory_structure"
+    ],
+    "corruption_thresholds": [
+        0.1,
+        0.5,
+        0.9
+    ],
+    "negative_corruption_buffs": [
+        "vasari_ship_corruption_penalty_mild",
+        "vasari_ship_corruption_penalty_moderate",
+        "vasari_ship_corruption_penalty_extreme"
+    ],
+    "npc":
+    {
+        "can_survey_planets": false,
+        "visuals": [
+        {
+            "name": "npc_player.viturak_cabal.name",
+            "description": "npc_player.viturak_cabal.description",
+            "portrait": "npc_viturak_0",
+            "icon": "faction_13",
+            "color_group": "npc_viturak_cabal",
+            "reputation_panel": "viturak_cabal_panel"
+        }],
+        "sounds":
+        {
+            "sounds":
+            {
+                "use_ability_generic": "viturak_npc_use_ability_generic_0",
+                "use_ability_raid_0": "viturak_npc_use_ability_raid_0_0",
+                "use_ability_raid_1": "viturak_npc_use_ability_raid_1_0",
+                "use_ability_purchase_item": "viturak_npc_use_ability_purchase_item_0",
+                "reputation_level_increased": "viturak_npc_reputation_level_increased_0",
+                "insufficient_influence_points": "viturak_npc_insufficient_influence_points_0",
+                "auction_started": "viturak_npc_auction_started_0",
+                "auction_won": "viturak_npc_auction_won_0",
+                "auction_lost": "viturak_npc_auction_lost_0",
+                "auction_ignored": "viturak_npc_auction_ignored_0",
+                "attacking": "viturak_npc_attacking_0"
+            }
+        },        
+        "ai_params":
+        {
+            "will_fleet_colonize": false,
+            "max_jumps_from_home_planet_for_fleets": 0,
+            "pick_another_buildable_attack_ship_type_interval_in_minutes": [0, 0],
+            "desired_explore_ship_count":
+            {
+                "type": "constant",
+                "value": 0
+            }
+        },
+        "max_fleet_supply":
+        {
+            "roam": [100, 200, 300, 400],
+            "defend": [250, 500, 750, 1000]
+        },
+        "start_allied_to_playable_players": true,
+        "start_allied_to_other_npc_players": true,
+        "start_allied_to_militia_npc_players": false,
+        "auctions": [
+        {
+            "weight": 1.0,
+            "bid_duration": 75.0,
+            "rewards": [
+                "crystal_stockpile_auction_0",
+                "crystal_stockpile_auction_1",
+                "crystal_stockpile_auction_2",
+                "crystal_stockpile_auction_3"
+            ]
+        },
+        {
+            "weight": 0.8,
+            "bid_duration": 75.0,
+            "rewards": [
+                "utility_exotic_stockpile_0",
+                "utility_exotic_stockpile_1",
+                "utility_exotic_stockpile_2",
+                "utility_exotic_stockpile_3"
+            ]
+        },
+        {
+            "weight": 0.5,
+            "bid_duration": 75.0,
+            "rewards": [
+                "viturak_phase_shifter",
+                "viturak_phase_shifter",
+                "viturak_phase_shifter",
+                "viturak_phase_shifter"
+            ]
+        },
+        {
+            "weight": 0.5,
+            "bid_duration": 75.0,
+            "rewards": [
+                "",
+                "viturak_phase_crystalizer",
+                "viturak_phase_crystalizer",
+                "viturak_phase_crystalizer"
+            ]
+        },
+        {
+            "weight": 0.5,
+            "bid_duration": 75.0,
+            "rewards": [
+                "",
+                "",
+                "viturak_mobile_deploy_phase_gate",
+                "viturak_mobile_deploy_phase_gate"
+            ]
+        }],
+        "crystal_market":
+        {
+            "market_weight": 0,
+            "sell_price": 1.5,
+            "buy_price": 3.0
+        },
+        "metal_market":
+        {
+            "market_weight": 0,
+            "sell_price": 1.5,
+            "buy_price": 3.0
+        },
+        "bounty_market":
+        {
+            "market_weight": 2,
+            "bounty_cut": 0.4,
+            "metal_credit_value": 3.0,
+            "crystal_credit_value": 3.0,
+            "exotic_credit_values": [
+            {
+                "exotic_name": "offense",
+                "credit_value": 750
+            },
+            {
+                "exotic_name": "defense",
+                "credit_value": 750
+            },
+            {
+                "exotic_name": "utility",
+                "credit_value": 750
+            },
+            {
+                "exotic_name": "economic",
+                "credit_value": 750
+            },
+            {
+                "exotic_name": "ultimate",
+                "credit_value": 1500
+            }]
+        },
+        "exotic_market":
+        {
+            "market_weight": 10,
+            "exotic_types": [
+            {
+                "exotic_name": "defense",
+                "exotic_definition":
+                {
+                    "sell_credits_amount": 750.0
+                }
+            },
+            {
+                "exotic_name": "economic",
+                "exotic_definition":
+                {
+                    "sell_credits_amount": 750.0
+                }
+            },
+            {
+                "exotic_name": "offense",
+                "exotic_definition":
+                {
+                    "sell_credits_amount": 750.0
+                }
+            },
+            {
+                "exotic_name": "ultimate",
+                "exotic_definition":
+                {
+                    "sell_credits_amount": 1500.0
+                }
+            },
+            {
+                "exotic_name": "utility",
+                "exotic_definition":
+                {
+                    "sell_credits_amount": 750.0
+                }
+            }]
+        },
+        "simple_can_ever_be_colonized_planet_types": [
+            "asteroid",
+            "barren",
+            "city",
+            "crystalline",
+            "desert",
+            "ferrous",
+            "gas_giant",
+            "hive_asteroid",
+            "ice_asteroid",
+            "ice_moon",
+            "ice",
+            "magnetic",
+            "moon",
+            "oceanic",
+            "ship_graveyard",
+            "swamp",
+            "terran",
+            "volcanic_moon",
+            "volcanic"
+        ],
+        "simple_planet_level": 10,
+        "simple_planet_tracks":
+        {
+            "defense":
+            {
+                "max_military_structure_slots": 10,
+                "max_health_points": 2000.0,
+                "health_points_restore_rate": 1.0
+            },
+            "logistics":
+            {
+                "max_civilian_structure_slots": 3,
+                "structure_builder_count": 1
+            },
+            "commerce":
+            {},
+            "mining":
+            {
+                "metal_income_rate": 8.0,
+                "crystal_income_rate": 8.0
+            },
+            "research":
+            {},
+            "corruption":
+            {},
+            "industry":
+            {},
+            "influence":
+            {},
+            "culture":
+            {},
+            "population":
+            {},
+            "surveying":
+            {},
+            "focus":
+            {}
+        },
+        "simple_trade_capacity":
+        {
+            "export_points":
+            {}
+        },
+        "reputation":
+        {
+            "reward_between_gravity_well_range": 30.0,
+            "rewards": [
+            {
+                "reward": "viturak_remote_fabrication",
+                "required_reputation_level": 0,
+                "influence_point_cost": 1,
+                "cooldown_duration": 180
+            },
+            {
+                "reward": "viturak_jump_field_stabilizer",
+                "required_reputation_level": 1,
+                "influence_point_cost": 3,
+                "cooldown_duration": 240
+            },
+            {
+                "reward": "jiskun_tachyon_boost",
+                "required_reputation_level": 2,
+                "influence_point_cost": 6,
+                "cooldown_duration": 360
+            },
+            {
+                "reward": "viturak_deploy_phase_gate",
+                "required_reputation_level": 3,
+                "influence_point_cost": 10,
+                "cooldown_duration": 480
+            }],
+            "levels": [
+            {
+                "influence_point_cost": 1,
+                "npc_modifiers":
+                {
+                    "sell_exotic_credits_received":
+                    {
+                        "value_behavior": "scalar",
+                        "value": 0.05
+                    }
+                }
+            },
+            {
+                "influence_point_cost": 3,
+                "npc_modifiers":
+                {
+                    "sell_exotic_credits_received":
+                    {
+                        "value_behavior": "scalar",
+                        "value": 0.1
+                    }
+                }
+            },
+            {
+                "influence_point_cost": 6,
+                "npc_modifiers":
+                {
+                    "sell_exotic_credits_received":
+                    {
+                        "value_behavior": "scalar",
+                        "value": 0.2
+                    }
+                }
+            },
+            {
+                "influence_point_cost": 10,
+                "npc_modifiers":
+                {
+                    "sell_exotic_credits_received":
+                    {
+                        "value_behavior": "scalar",
+                        "value": 0.35
+                    }
+                }
+            }]
+        }
+    }
+}

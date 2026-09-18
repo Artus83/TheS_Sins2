@@ -1,0 +1,593 @@
+{
+    "version": 0,
+    "race": "trader",
+    "fleet": "trader_fleet",
+    "fleet_name_group": "fleet",
+    "default_starting_assets":
+    {
+        "credits": 3000,
+        "metal": 750,
+        "crystal": 500
+    },
+    "home_planet":
+    {
+        "random_fixture_filling": "random_ship_graveyard_planet",
+        "levels": [
+        {
+            "income_rates":
+            {
+                "credits": 10.0,
+                "metal": 5.0,
+                "crystal": 2.5
+            },
+            "modifier_values":
+            {
+                "max_civilian_structure_slots":
+                {
+                    "additive": 4.0
+                },
+                "max_military_structure_slots":
+                {
+                    "additive": 20.0
+                }
+            }
+        }]
+    },
+    "starting_units_in_gravity_well":
+    {
+        "required_units": [
+        {
+            "unit": "trader_autocannon_defense_structure",
+            "count": [8, 10]
+        },
+        {
+            "unit": "trader_gauss_defense_structure",
+            "count": [4, 8]
+        },
+        {
+            "unit": "vasari_missile_defense_structure",
+            "count": [3, 6]
+        },
+        {
+            "unit": "advent_beam_defense_structure",
+            "count": [2, 5]
+        },
+        {
+            "unit": "trader_torpedo_cruiser",
+            "count": [1, 3]
+        },
+        {
+            "unit": "vasari_antiarmor_cruiser",
+            "count": [1, 2]
+        },
+        {
+            "unit": "trader_retrofit_bay_structure",
+            "count": [3, 5]
+        },
+        {
+            "unit": "vasari_repair_platform_structure",
+            "count": [2, 3]
+        },
+        {
+            "unit": "trader_trade_port_structure",
+            "count": [1, 1]
+        },
+        {
+            "unit": "trader_starbase",
+            "options":
+            {
+                "items": [
+                    "trader_starbase_structural_integrity_0",
+                    "trader_starbase_structural_integrity_1",
+                    "trader_starbase_structural_integrity_2",
+                    "trader_starbase_planetary_shield_array",
+                    "trader_starbase_unlock_beam_weapon",
+                    "trader_starbase_unlock_torpedo_weapon",
+                    "trader_starbase_stun_torpedo",
+                    "trader_starbase_command_center"
+                ]
+            }
+        }]
+    },
+    "starting_units_in_formations": [
+    {
+        "required_units": [
+        {
+            "unit": "trader_light_frigate",
+            "count": [3, 4]
+        },
+        {
+            "unit": "vasari_light_frigate",
+            "count": [1, 2]
+        },
+        {
+            "unit": "advent_light_frigate",
+            "count": [1, 2]
+        },
+        {
+            "unit": "pirate_light_frigate",
+            "count": [1, 2]
+        },
+        {
+            "unit": "trader_frigate_factory_structure",
+            "count": [1, 1]
+        }]
+    },
+    {
+        "required_units": [
+        {
+            "unit": "trader_scout_frigate",
+            "count": [3, 5]
+        },
+        {
+            "unit": "trader_antifighter_frigate",
+            "count": [2, 3]
+        },
+        {
+            "unit": "vasari_antifighter_frigate",
+            "count": [1, 2]
+        },
+        {
+            "unit": "advent_defense_cruiser",
+            "count": [1, 2]
+        },
+        {
+            "unit": "vasari_factory_structure",
+            "count": [1, 1]
+        }]
+    },
+    {
+        "required_units": [
+        {
+            "unit": "trader_command_cruiser",
+            "count": [3, 4]
+        },
+        {
+            "unit": "trader_robotics_cruiser",
+            "count": [1, 3]
+        },
+        {
+            "unit": "vasari_overseer_cruiser",
+            "count": [1, 2]
+        },
+        {
+            "unit": "advent_guardian_cruiser",
+            "count": [1, 2]
+        },
+        {
+            "unit": "trader_capital_ship_factory_structure",
+            "count": [1, 1]
+        }]
+    },
+    {
+        "required_units": [
+        {
+            "unit": "trader_medium_cruiser",
+            "count": [3, 5]
+        },
+        {
+            "unit": "trader_heavy_cruiser",
+            "count": [1, 2]
+        },
+        {
+            "unit": "vasari_heavy_cruiser",
+            "count": [1, 2]
+        },
+        {
+            "unit": "pirate_heavy_cruiser",
+            "count": [1, 2]
+        },
+        {
+            "unit": "trader_capital_ship_factory_structure",
+            "count": [1, 1]
+        }]
+    }],
+    "buildable_strikecraft": [
+        "trader_interceptor_strikecraft",
+        "trader_bomber_strikecraft"
+    ],
+    "unit_limits":
+    {},
+    "buildable_units": [
+        "trader_light_frigate",
+        "vasari_light_frigate",
+        "advent_light_frigate",
+        "pirate_light_frigate",
+        "trader_scout_frigate",
+        "trader_antifighter_frigate",
+        "vasari_antifighter_frigate",
+        "advent_defense_cruiser",
+        "trader_command_cruiser",
+        "trader_robotics_cruiser",
+        "vasari_overseer_cruiser",
+        "advent_guardian_cruiser",
+        "trader_heavy_cruiser",
+        "trader_medium_cruiser",
+        "vasari_heavy_cruiser",
+        "pirate_heavy_cruiser",
+        "trader_siege_frigate",
+        "vasari_siege_cruiser",
+        "advent_siege_frigate",
+        "pirate_siege_frigate",
+        "trader_torpedo_cruiser",
+        "vasari_antiarmor_cruiser"
+    ],
+    "structure_builder":
+    {
+        "ship": "trader_constructor_ship",
+        "special_operation_unit_kind": "structure_builder"
+    },
+    "structures": [
+        "trader_frigate_factory_structure",
+        "trader_capital_ship_factory_structure",
+        "vasari_factory_structure",
+        "trader_autocannon_defense_structure",
+        "trader_gauss_defense_structure",
+        "vasari_missile_defense_structure",
+        "advent_beam_defense_structure",
+        "trader_retrofit_bay_structure",
+        "trader_metal_extractor_structure",
+        "trader_crystal_extractor_structure",
+        "trader_trade_port_structure",
+        "trader_culture_center_structure"
+    ],
+    "corruption_thresholds": [
+        0.1,
+        0.5,
+        0.9
+    ],
+    "negative_corruption_buffs": [
+        "trader_ship_corruption_penalty_mild",
+        "trader_ship_corruption_penalty_moderate",
+        "trader_ship_corruption_penalty_extreme"
+    ],
+    "npc":
+    {
+        "can_survey_planets": false,
+        "visuals": [
+        {
+            "name": "npc_player.eivonns_frigates.name",
+            "description": "npc_player.eivonns_frigates.description",
+            "portrait": "npc_eivonn_0",
+            "icon": "faction_9",
+            "color_group": "npc_eivonns_frigates",
+            "reputation_panel": "eivonns_frigates_panel"
+        }],
+        "sounds":
+        {
+            "sounds":
+            {
+                "use_ability_generic": "eivonns_frigates_npc_use_ability_generic_0",
+                "use_ability_raid_0": "eivonns_frigates_npc_use_ability_raid_0",
+                "use_ability_raid_1": "eivonns_frigates_npc_use_ability_raid_0",
+                "use_ability_purchase_item": "eivonns_frigates_npc_use_ability_purchase_item_0",
+                "reputation_level_increased": "eivonns_frigates_npc_reputation_level_increased_0",
+                "insufficient_influence_points": "eivonns_frigates_npc_insufficient_influence_points_0",
+                "auction_started": "eivonns_frigates_npc_auction_started_0",
+                "auction_won": "eivonns_frigates_npc_auction_won_0",
+                "auction_lost": "eivonns_frigates_npc_auction_lost_0",
+                "auction_ignored": "eivonns_frigates_npc_auction_ignored_0",
+                "attacking": "eivonns_frigates_npc_attacking_0"
+            }
+        },
+        "ai_params":
+        {
+            "will_fleet_colonize": false,
+            "max_jumps_from_home_planet_for_fleets": 1,
+            "pick_another_buildable_attack_ship_type_interval_in_minutes": [0, 0],
+            "desired_explore_ship_count":
+            {
+                "type": "constant",
+                "value": 0
+            }
+        },
+        "max_fleet_supply":
+        {
+            "roam": [50, 100, 150, 250],
+            "defend": [150, 250, 350, 500]
+        },
+        "start_allied_to_playable_players": true,
+        "start_allied_to_other_npc_players": false,
+        "start_allied_to_militia_npc_players": true,
+        "auctions": [
+        {
+            "weight": 1.0,
+            "bid_duration": 75.0,
+            "rewards": [
+                "metal_stockpile_auction_0",
+                "metal_stockpile_auction_1",
+                "metal_stockpile_auction_2",
+                "metal_stockpile_auction_3"
+            ]
+        },
+        {
+            "weight": 0.8,
+            "bid_duration": 75.0,
+            "rewards": [
+                "defense_exotic_stockpile_0",
+                "defense_exotic_stockpile_1",
+                "defense_exotic_stockpile_2",
+                "defense_exotic_stockpile_3"
+            ]
+        },
+        {
+            "weight": 0.5,
+            "bid_duration": 75.0,
+            "rewards": [
+                "metal_market_monopolization_0",
+                "metal_market_monopolization_1",
+                "metal_market_monopolization_2",
+                "metal_market_monopolization_3"
+            ]
+        }],
+        "crystal_market":
+        {
+            "market_weight": 5,
+            "sell_price": 1.5,
+            "buy_price": 3.0
+        },
+        "metal_market":
+        {
+            "market_weight": 15,
+            "sell_price": 1.5,
+            "buy_price": 3.0
+        },
+        "bounty_market":
+        {
+            "market_weight": 5,
+            "bounty_cut": 0.4,
+            "metal_credit_value": 3.0,
+            "crystal_credit_value": 3.0,
+            "exotic_credit_values": [
+            {
+                "exotic_name": "offense",
+                "credit_value": 750
+            },
+            {
+                "exotic_name": "defense",
+                "credit_value": 750
+            },
+            {
+                "exotic_name": "utility",
+                "credit_value": 750
+            },
+            {
+                "exotic_name": "economic",
+                "credit_value": 750
+            },
+            {
+                "exotic_name": "ultimate",
+                "credit_value": 1500
+            }]
+        },
+        "exotic_market":
+        {
+            "market_weight": 0,
+            "exotic_types": [
+            {
+                "exotic_name": "defense",
+                "exotic_definition":
+                {
+                    "sell_credits_amount": 750.0
+                }
+            },
+            {
+                "exotic_name": "economic",
+                "exotic_definition":
+                {
+                    "sell_credits_amount": 750.0
+                }
+            },
+            {
+                "exotic_name": "offense",
+                "exotic_definition":
+                {
+                    "sell_credits_amount": 750.0
+                }
+            },
+            {
+                "exotic_name": "ultimate",
+                "exotic_definition":
+                {
+                    "sell_credits_amount": 1500.0
+                }
+            },
+            {
+                "exotic_name": "utility",
+                "exotic_definition":
+                {
+                    "sell_credits_amount": 750.0
+                }
+            }]
+        },
+        "simple_can_ever_be_colonized_planet_types": [
+            "asteroid",
+            "barren",
+            "city",
+            "crystalline",
+            "desert",
+            "ferrous",
+            "hive_asteroid",
+            "ice",
+            "ice_asteroid",
+            "ice_moon",
+            "magnetic",
+            "moon",
+            "oceanic",
+            "ship_graveyard",
+            "swamp",
+            "terran",
+            "volcanic",
+            "volcanic_moon"
+        ],
+        "simple_planet_level": 10,
+        "simple_planet_tracks":
+        {
+            "defense":
+            {
+                "max_military_structure_slots": 10,
+                "max_health_points": 3000.0,
+                "health_points_restore_rate": 2.0
+            },
+            "logistics":
+            {
+                "max_planet_component_slots": 1,
+                "max_civilian_structure_slots": 6,
+                "structure_builder_count": 2
+            },
+            "commerce":
+            {
+                "credits_income_rate": 5,
+                "credits_income_rate_per_population": 0.05
+            },
+            "mining":
+            {
+                "metal_income_rate": 3.0,
+                "crystal_income_rate": 1.5,
+                "metal_income_rate_per_population": 0.03,
+                "crystal_income_rate_per_population": 0.015
+            },
+            "research":
+            {},
+            "corruption":
+            {},
+            "industry":
+            {},
+            "influence":
+            {},
+            "culture":
+            {},
+            "population":
+            {},
+            "surveying":
+            {},
+            "focus":
+            {}
+        },
+        "simple_trade_capacity":
+        {
+            "export_points":
+            {
+                "credits": 1,
+                "metal": 1,
+                "crystal": 1
+            }
+        },
+        "reputation":
+        {
+            "reward_between_gravity_well_range": 10.0,
+            "rewards": [
+            {
+                "reward": "eivonns_light_ships",
+                "required_reputation_level": 0,
+                "influence_point_cost": 4,
+                "cooldown_duration": 300
+            },
+            {
+                "reward": "eivonns_flak_ships",
+                "required_reputation_level": 1,
+                "influence_point_cost": 4,
+                "cooldown_duration": 300
+            },
+            {
+                "reward": "eivonns_support_ships",
+                "required_reputation_level": 2,
+                "influence_point_cost": 6,
+                "cooldown_duration": 600
+            },
+            {
+                "reward": "eivonns_heavy_ships",
+                "required_reputation_level": 3,
+                "influence_point_cost": 6,
+                "cooldown_duration": 300
+            }],
+            "levels": [
+            {
+                "influence_point_cost": 4,
+                "npc_modifiers":
+                {
+                    "buy_metal_credits_cost":
+                    {
+                        "value_behavior": "scalar",
+                        "value": -0.1
+                    }
+                }
+            },
+            {
+                "influence_point_cost": 4,
+                "npc_modifiers":
+                {
+                    "buy_metal_credits_cost":
+                    {
+                        "value_behavior": "scalar",
+                        "value": -0.15
+                    }
+                }
+            },
+            {
+                "influence_point_cost": 6,
+                "npc_modifiers":
+                {
+                    "buy_metal_credits_cost":
+                    {
+                        "value_behavior": "scalar",
+                        "value": -0.2
+                    }
+                }
+            },
+            {
+                "influence_point_cost": 6,
+                "npc_modifiers":
+                {
+                    "buy_metal_credits_cost":
+                    {
+                        "value_behavior": "scalar",
+                        "value": -0.25
+                    }
+                }
+            }]
+        }
+    },
+    "culture":
+    {
+        "base_allegiance_growth_rate_from_neutral": 0.1,
+        "base_allegiance_growth_rate_from_other_players": 0.025,
+        "base_max_allegiance_factor": 0.05,
+        "base_per_population_bonus_per_allied_population_percentage_scalar": 1.0,
+        "base_per_population_penalty_per_other_population_percentage_scalar": 1.0,
+        "base_allegiance_decay_rate": 0.05,
+        "allegiance_decay_exponent": 2.0,
+        "allegiance_decay_minimum_percentage": 0.01,
+        "decay_rates": [
+        {
+            "decay_rate": 0.02
+        }],
+        "propagation_rates": [
+        {
+            "propagation_rate_scalar": -2.0
+        }]
+    },
+    "planet_elevators":
+    {
+        "elevator_meshes": [
+            "space_elevator"
+        ],
+        "starting_elevator_count": 3,
+        "per_level_elevator_count": 0.4,
+        "explosion_effect": "trader_planet_elevator_explosion",
+        "explosion_sound": "explosion_frigateshipdeath",
+        "car_count_per_elevator_connection": 35,
+        "car_max_travel_time": 80.0,
+        "car_max_travel_time_offset": 20.0,
+        "car_tangent_offset_distance": 2.0,
+        "car_path_count": 250,
+        "car_path_min_t_delta": 0.4,
+        "cars_texture_animation": "planet_elevator_cars_trader",
+        "car_width": 40.0,
+        "car_height": 64.0,
+        "car_basic_constants":
+        {
+            "emissive_factor": 0.1
+        }
+    }
+}
