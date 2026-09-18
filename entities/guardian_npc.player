@@ -13,6 +13,16 @@
     },
     "unit_limits":
     {},
+    "corruption_thresholds": [
+        0.1,
+        0.5,
+        0.9
+    ],
+    "negative_corruption_buffs": [
+        "trader_ship_corruption_penalty_mild",
+        "trader_ship_corruption_penalty_moderate",
+        "trader_ship_corruption_penalty_extreme"
+    ],
     "npc":
     {
         "visuals": [
@@ -165,6 +175,16 @@
                 "crystal_income_rate_per_population": 0.01
             },
             "research":
+            {},
+            "corruption":
+            {},
+            "industry":
+            {},
+            "influence":
+            {},
+            "culture":
+            {},
+            "population":
             {},
             "surveying":
             {},
