@@ -1,0 +1,8 @@
+{
+    "version": 0,
+    "action_data_source": "thes_starbase_planet_level_hull",
+    "passive_actions":
+    {
+        "persistant_buff": "thes_starbase_planet_level_hull_on_starbase"
+    }
+}

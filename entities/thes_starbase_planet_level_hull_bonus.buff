@@ -1,0 +1,56 @@
+{
+    "version": 0,
+    "make_dead_on_parent_buff_made_dead": true,
+    "stacking_limit":
+    {
+        "stacking_limit": "fixed_one",
+        "stacking_limit_met_behavior": "replace_existing_buff"
+    },
+    "stacking_ownership_type": "per_source_ability",
+    "restart_other_stacked_buffs_when_started": true,
+    "trigger_event_actions": [
+    {
+        "trigger_event_type": "on_buff_started",
+        "action_group":
+        {
+            "actions": [
+            {
+                "action_type": "change_buff_memory_float_value",
+                "float_variable": "planet_level",
+                "math_operators": [
+                {
+                    "operator_type": "assign",
+                    "operand_value": "fixed_zero"
+                },
+                {
+                    "operator_type": "add",
+                    "operand_value": "thes_starbase_planet_level_defense_track_level"
+                },
+                {
+                    "operator_type": "add",
+                    "operand_value": "thes_starbase_planet_level_logistics_track_level"
+                },
+                {
+                    "operator_type": "add",
+                    "operand_value": "thes_starbase_planet_level_commerce_track_level"
+                },
+                {
+                    "operator_type": "add",
+                    "operand_value": "thes_starbase_planet_level_mining_track_level"
+                },
+                {
+                    "operator_type": "add",
+                    "operand_value": "thes_starbase_planet_level_research_track_level"
+                },
+                {
+                    "operator_type": "add",
+                    "operand_value": "thes_starbase_planet_level_focus_track_level"
+                }]
+            }]
+        }
+    }],
+    "unit_modifiers": [
+    {
+        "buff_unit_modifier_id": "thes_starbase_planet_level_max_hull_points_modifier"
+    }]
+}

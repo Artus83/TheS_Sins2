@@ -1,5 +1,8 @@
 {
     "ids": [
-        "passive_experience"
+        "passive_experience",
+        "thes_starbase_planet_level_hull_on_starbase",
+        "thes_starbase_planet_level_hull_on_planet",
+        "thes_starbase_planet_level_hull_bonus"
     ]
 }
