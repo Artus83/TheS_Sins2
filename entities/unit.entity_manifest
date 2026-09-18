@@ -2,6 +2,7 @@
     "ids": [
         "advent_ancient_starbase",
 		"vasari_ancient_starbase",
-	    "trader_ancient_starbase"
+	    "trader_ancient_starbase",
+        "dlc3_herald_ancient_starbase"
     ]
 }

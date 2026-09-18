@@ -495,7 +495,8 @@
         "dlc3_herald_light_defense_structure",
         "dlc3_herald_support_defense_structure",
         "dlc3_herald_heavy_defense_structure",
-        "dlc3_herald_starbase"
+        "dlc3_herald_starbase",
+        "dlc3_herald_ancient_starbase"
     ],
     "allowed_traffic_ports": [
         "advent_population_structure",
@@ -520,6 +521,10 @@
         {
             "tag": "super_capital_ship",
             "unit_limit": 1
+        },
+        {
+            "tag": "dlc_ancient_starbase",
+            "unit_limit": 1
         }],
         "star": [
         {
@@ -533,6 +538,10 @@
         },
         {
             "tag": "superweapon",
+            "unit_limit": 1
+        },
+        {
+            "tag": "dlc_ancient_starbase",
             "unit_limit": 1
         }]
     },
@@ -1035,7 +1044,8 @@
             "dlc3_herald_upgrade_void_missile_weapon_damage_0",
             "dlc3_herald_upgrade_void_missile_weapon_damage_1",
             "dlc3_herald_upgrade_void_missile_weapon_damage_2",
-            "dlc3_herald_upgrade_void_missile_weapon_targeting"
+            "dlc3_herald_upgrade_void_missile_weapon_targeting",
+            "dlc3_herald_unlock_ancient_starbase"
         ],
         "faction_research_subjects": [
             "dlc3_herald_unlock_afterimage",
