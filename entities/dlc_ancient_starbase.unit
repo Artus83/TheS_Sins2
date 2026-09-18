@@ -1172,45 +1172,12 @@
             "experience_given_on_death": 2000.0
         }]
     },
-    "build":
+    "corruption":
     {
-        "build_time": 180.0,
-        "price":
-        {
-            "credits": 4000.0,
-            "metal": 2000.0,
-            "crystal": 2000.0
-        },
-        "exotic_price": [
-        {
-            "exotic_type": "defense",
-            "count": 2
-        },
-        {
-            "exotic_type": "utility",
-            "count": 1
-        },{
-            "exotic_type": "ultimate",
-            "count": 2
-        }],
-        "prerequisites": [
-            ["dlc3_herald_unlock_ancient_starbase"]
-        ],
-        "build_kind": "starbase",
-        "build_radius": 2920,
-        "self_build_time_gravity_well_scalars":
-        {
-            "enemy": [
-            {
-                "value": 2.5
-            }],
-            "neutral": [
-            {
-                "value": 1.0
-            }]
-        },
-        "can_update_build_progress_by_default": true,
-        "build_group_id": "starbase"
+        "max_corruption": 10000.0,
+        "corruption_decay_rate": 500.0,
+        "corruption_decay_delay_duration_after_gain": 0.0,
+        "corruption_thresholds": [0.5, 0.7, 0.9]
     },
     "items":
     {
@@ -1220,6 +1187,12 @@
         }],
         "requires_ship_component_shop_to_purchase_items": false
     },
+    "unit_modifiers": [
+    {
+        "modifier_type": "min_detection_level",
+        "value_behavior": "additive",
+        "value": 1.0
+    }],
     "target_filter_unit_type": "starbase",
     "tags": [
         "dlc_ancient_starbase"
@@ -1230,7 +1203,7 @@
             "thes_starbase_planet_level_hull"
         ]
     }],
-    "virtual_supply_cost": 200,
+    "virtual_supply_cost": 1000,
     "skin_groups": [
     {
         "skins": [

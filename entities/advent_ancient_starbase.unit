@@ -8,7 +8,22 @@
             "center": [0.0, 0.0, -0.000122],
             "extents": [2345.210449, 2055.444824, 1731.369507]
         },
-        "can_be_displaced_on_collision": false
+        "collision_rank": 3,
+        "can_be_displaced_on_collision": false,
+        "missile_aim_zones": [
+            { "center": [0.0, -500, 0.0], "radius": 750.0 },
+            { "center": [0.0, 1200.0, 0.0], "radius": 800.0 },
+            { "center": [1000.0, 450.0, 1000.0], "radius": 500.0 },
+            { "center": [1000.0, 450.0, -1000.0], "radius": 500.0 },
+            { "center": [-1000.0, 450.0, 1000.0], "radius": 500.0 },
+            { "center": [-1000.0, 450.0, -1000.0], "radius": 500.0 },
+            { "center": [750.0, 500.0, 0.0], "radius": 600.0 },
+            { "center": [-750.0, 500.0, 0.0], "radius": 600.0 },
+            { "center": [0.0, 500.0, 750.0], "radius": 600.0 },
+            { "center": [0.0, 500.0, -750.0], "radius": 600.0 },
+            { "center": [1350.0, -550.0, 0.0], "radius": 450.0 },
+            { "center": [-1350.0, -550.0, 0.0], "radius": 450.0 }
+        ]
     },
     "physics":
     {
@@ -17,7 +32,13 @@
         "death_angular_speed_range": [1.5, 1.5]
     },
     "attack":
-    {},
+    {
+        "attack_pattern":
+        {
+            "type": "immobile",
+            "rotate_only_on_plane": true
+        }
+    },
     "ai":
     {
         "attack_target_type_groups": [
@@ -1169,9 +1190,9 @@
             "exotic_type": "utility",
             "count": 1
         },{
-			"exotic_type": "ultimate",
-			"count": 2
-		}],
+            "exotic_type": "ultimate",
+            "count": 2
+        }],
         "prerequisites": [
             ["advent_unlock_ancient_starbase"]
         ],
@@ -1203,6 +1224,12 @@
     "tags": [
         "dlc_ancient_starbase"
     ],
+    "abilities": [
+    {
+        "abilities": [
+            "thes_starbase_planet_level_hull"
+        ]
+    }],
     "virtual_supply_cost": 200,
     "skin_groups": [
     {
@@ -1265,5 +1292,13 @@
         "hidden_by_unit_item": "dlc_ancient_starbase_unlock_heavy_weapon"
     }],
     "action_effect_size": "large_unit",
-    "force_count_as_attackable_enemy_unit" : true
+    "force_count_as_attackable_enemy_unit": true,
+    "capturable_unit":
+    {
+        "type": "change_owner_on_capture",
+        "allow_surrender": true,
+        "capture_points_total": 2000,
+        "has_surrender_cooldown": true,
+        "surrender_cooldown_duration": 300
+    }
 }
